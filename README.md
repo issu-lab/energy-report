@@ -19,12 +19,12 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 
 | Field | Current state |
 |---|---|
-| **Maturity** | 🟡 Active Development |
+| **Maturity** | 🟡 Alpha |
 | **Used in my homelab** | ❌ Not yet |
 | **Recommended for production** | ❌ Not yet |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.0` |
+| **Current version** | `0.1.0-alpha.1` |
 | **Minimum Home Assistant** | 2026.8.0 |
 | **Local tests** | ✅ 21 tests |
 | **Cumulative-energy validation** | ❌ Not yet |
@@ -32,7 +32,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Dual-source validation** | ❌ Not yet |
 
 > [!WARNING]
-> Version 0.1.0 is an initial testing release. Its accounting logic has dependency-free unit coverage, but the integration has not yet completed installation, migration or month-boundary validation on a live Home Assistant system.
+> Version 0.1.0-alpha.1 is an initial testing release. Its accounting logic has dependency-free unit coverage, but the integration has not yet completed installation, migration or month-boundary validation on a live Home Assistant system.
 
 > [!IMPORTANT]
 > Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
@@ -83,7 +83,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.1.
 
 ---
 
@@ -366,7 +366,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.0.
+- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.1.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 
 ---
