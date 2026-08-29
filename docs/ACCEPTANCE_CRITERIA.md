@@ -1,0 +1,49 @@
+# Acceptance criteria
+
+Version 0.1 is acceptable only when all applicable checks pass.
+
+## Accounting
+
+- Cumulative, power-only and dual modes produce isolated totals.
+- Wh/kWh/MWh and W/kW/MW normalize correctly.
+- Negative, unknown and unavailable values never enter totals.
+- Cumulative reset and source replacement preserve the ledger.
+- Plausibility uses elapsed time and configured maximum power.
+- Power fallback cannot double-count the cumulative recovery interval.
+- Intervals spanning a month boundary are split deterministically.
+- Closed months cannot be modified by later readings.
+
+## Periods and costs
+
+- First-of-month closure is timezone-aware, idempotent and recovered after restart.
+- Source absence cannot postpone closure.
+- Tariff changes recalculate only the open month.
+- Forecast is hidden for the first three days and when coverage is below 80%.
+
+## Archive and migration
+
+- Annual CSV uses the documented ordered schema and atomic replacement.
+- Generated archives contain closed months only.
+- Import validates the whole file, previews counts and rejects conflicts.
+- At most one open current-month record can be imported.
+- Imported data does not send notifications.
+- The public importer contains no AppDaemon- or Shelly-specific code.
+
+## Home Assistant and delivery
+
+- Multiple config entries remain independent.
+- Source selectors reject incompatible metadata.
+- Reconfigure explicitly replaces sources and establishes new baselines.
+- One notification service is configurable and testable.
+- Monthly report is compact and exposes reconstructed or incomplete data.
+- Resend uses the immutable last report and does not touch the archive.
+- Failure creates a persistent notification and diagnostic evidence.
+- Diagnostics contain no notification target or source entity IDs.
+
+## Package
+
+- Manifest, VERSION and HACS metadata agree.
+- English and Italian translation key shapes agree.
+- Python compilation and unit tests pass.
+- Banner and 1280 x 640 social preview are reproducible; footer and brand icons reuse the canonical iSSU repository assets unchanged.
+- No credentials, runtime state, backup files or site-specific entity IDs are included.

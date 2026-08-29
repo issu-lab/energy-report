@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="5120" height="1280" viewBox="0 0 5120 1280">
+  <style>
+    @font-face { font-family: Exo2; src: url('fonts/Exo2-Variable.ttf'); font-weight: 100 900; }
+    @font-face { font-family: Inter; src: url('fonts/Inter-Variable.ttf'); font-weight: 100 900; }
+    .title { font-family: Exo2, sans-serif; font-size: 250px; font-weight: 700; }
+    .subtitle { font-family: Inter, sans-serif; font-size: 84px; font-weight: 600; }
+  </style>
+  <rect width="5120" height="1280" fill="#FFFFFF"/>
+  <image x="0" y="400" width="850" height="520" href="issu-brand-light-crop.png" preserveAspectRatio="xMidYMid meet"/>
+  <g transform="translate(1200 620)" fill="none" stroke="#D94DFF" stroke-linecap="round" stroke-linejoin="round">
+    <circle r="250" stroke-width="18"/>
+    <path d="M -92 -135 H 55 L 125 -65 V 135 H -92 Z" stroke-width="18"/>
+    <path d="M 55 -135 V -65 H 125" stroke-width="18"/>
+    <path d="M -48 75 V 10 M 0 75 V -35 M 48 75 V -82" stroke-width="28"/>
+    <path d="M -60 108 H 72" stroke-width="14" opacity="0.65"/>
+  </g>
+  <text class="title" x="1650" y="685"><tspan fill="#151923">ENERGY</tspan><tspan dx="50" fill="#D94DFF">REPORT</tspan></text>
+  <text class="subtitle" x="1650" y="835" fill="#151923">CONSUMPTION, COSTS AND MONTHLY INSIGHT</text>
+  <g fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#22AEEF"><circle cx="4200" cy="590" r="70"/><path d="M 4155 610 A 48 48 0 0 1 4245 610"/><path d="M 4200 610 L 4230 570"/><circle cx="4200" cy="610" r="8" fill="#22AEEF"/></g>
+    <g stroke="#F28C28"><circle cx="4480" cy="590" r="70"/><path d="M 4438 618 L 4468 586 L 4493 603 L 4525 556"/><path d="M 4502 556 H 4525 V 579"/></g>
+    <g stroke="#26B85A"><circle cx="4760" cy="590" r="70"/><path d="M 4724 548 H 4781 L 4800 567 V 632 H 4724 Z"/><path d="M 4781 548 V 567 H 4800 M 4742 590 H 4782 M 4742 610 H 4782"/></g>
+  </g>
+  <g fill="none" stroke="#D94DFF" stroke-width="140" opacity="0.14">
+    <path d="M 4740 1280 A 380 380 0 0 1 5120 900"/>
+    <path d="M 4910 1280 A 210 210 0 0 1 5120 1070"/>
+  </g>
+</svg>
+

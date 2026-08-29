@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <style>@font-face { font-family: Exo2; src: url('fonts/Exo2-Variable.ttf'); font-weight: 100 900; } @font-face { font-family: Inter; src: url('fonts/Inter-Variable.ttf'); font-weight: 100 900; } .title { font-family: Exo2; font-size: 92px; font-weight: 700; } .subtitle { font-family: Inter; font-size: 23px; font-weight: 600; }</style>
+  <rect width="1280" height="640" fill="#FFFFFF"/>
+  <image x="38" y="25" width="205" height="110" href="issu-brand-light-crop.png" preserveAspectRatio="xMidYMid meet"/>
+  <g transform="translate(175 320)" fill="none" stroke="#D94DFF" stroke-linecap="round" stroke-linejoin="round">
+    <circle r="128" stroke-width="9"/><path d="M -46 -68 H 28 L 63 -33 V 68 H -46 Z" stroke-width="9"/><path d="M 28 -68 V -33 H 63" stroke-width="9"/><path d="M -24 38 V 5 M 0 38 V -18 M 24 38 V -42" stroke-width="14"/>
+  </g>
+  <text class="title" x="340" y="335"><tspan fill="#151923">ENERGY</tspan><tspan dx="18" fill="#D94DFF">REPORT</tspan></text>
+  <text class="subtitle" x="344" y="410" fill="#151923">CONSUMPTION, COSTS AND MONTHLY INSIGHT</text>
+  <g fill="none" stroke="#D94DFF" stroke-width="40" opacity="0.16"><path d="M 1090 640 A 190 190 0 0 1 1280 450"/><path d="M 1155 640 A 125 125 0 0 1 1280 515"/></g>
+  <g fill="none" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <g stroke="#22AEEF"><circle cx="1042" cy="80" r="23"/><path d="M 1028 86 A 16 16 0 0 1 1056 86"/><path d="M 1042 86 L 1051 72"/></g>
+    <g stroke="#F28C28"><circle cx="1124" cy="80" r="23"/><path d="M 1110 88 L 1120 78 L 1128 84 L 1139 68"/></g>
+    <g stroke="#26B85A"><circle cx="1206" cy="80" r="23"/><path d="M 1195 66 H 1211 L 1217 72 V 94 H 1195 Z M 1211 66 V 72 H 1217"/></g>
+  </g>
+</svg>
+

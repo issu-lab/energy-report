@@ -1,0 +1,5 @@
+schema_version,record_status,year,month,period_start,period_end,measured_kwh,reconstructed_kwh,total_kwh,coverage_percent,unknown_duration_minutes,excluded_kwh,tariff_per_kwh,currency,total_cost,data_quality,origin,closed_at
+1,closed,2026,6,2026-06-01T00:00:00+02:00,2026-06-30T23:59:59.999999+02:00,171.800000,0.000000,171.800000,100.000,0.000,0.000000,0.280000,EUR,48.10,complete,imported,2026-07-01T08:00:00+02:00
+1,closed,2026,7,2026-07-01T00:00:00+02:00,2026-07-31T23:59:59.999999+02:00,182.450000,1.200000,183.650000,99.300,18.000,0.000000,0.280000,EUR,51.42,incomplete,imported,2026-08-01T08:00:00+02:00
+1,open,2026,8,2026-08-01T00:00:00+02:00,2026-08-31T23:59:59.999999+02:00,143.800000,0.000000,143.800000,98.000,0.000,0.000000,0.280000,EUR,40.26,complete,imported,
+

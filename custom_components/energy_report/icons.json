@@ -1,0 +1,25 @@
+{
+  "entity": {
+    "sensor": {
+      "diagnostics": {
+        "default": "mdi:chart-box-outline",
+        "state": {
+          "ok": "mdi:check-circle-outline",
+          "degraded": "mdi:alert-circle-outline",
+          "attention": "mdi:alert-outline"
+        }
+      }
+    },
+    "number": {
+      "tariff": {
+        "default": "mdi:currency-eur"
+      }
+    },
+    "button": {
+      "resend_last_report": {
+        "default": "mdi:send-clock-outline"
+      }
+    }
+  }
+}
+

@@ -1,0 +1,63 @@
+"""Constants for Energy Report."""
+
+from __future__ import annotations
+
+from homeassistant.const import Platform
+
+DOMAIN = "energy_report"
+PLATFORMS = [Platform.SENSOR, Platform.NUMBER, Platform.BUTTON]
+
+CONF_NAME = "name"
+CONF_INSTANCE_ID = "instance_id"
+CONF_SOURCE_MODE = "source_mode"
+CONF_ENERGY_SENSOR = "energy_sensor"
+CONF_POWER_SENSOR = "power_sensor"
+CONF_TARIFF = "tariff"
+CONF_NOTIFICATION_SERVICE = "notification_service"
+
+MODE_ENERGY = "energy"
+MODE_POWER = "power"
+MODE_DUAL = "dual"
+SOURCE_MODES = (MODE_ENERGY, MODE_POWER, MODE_DUAL)
+
+OPT_MAX_POWER_KW = "max_power_kw"
+OPT_SOURCE_TIMEOUT_MINUTES = "source_timeout_minutes"
+OPT_REPORT_HOUR = "report_hour"
+OPT_NOTIFICATION_SERVICE = CONF_NOTIFICATION_SERVICE
+
+DEFAULT_MAX_POWER_KW = 10.0
+DEFAULT_SOURCE_TIMEOUT_MINUTES = 15
+DEFAULT_REPORT_HOUR = 8
+DEFAULT_TARIFF = 0.24
+DEFAULTS = {
+    OPT_MAX_POWER_KW: DEFAULT_MAX_POWER_KW,
+    OPT_SOURCE_TIMEOUT_MINUTES: DEFAULT_SOURCE_TIMEOUT_MINUTES,
+    OPT_REPORT_HOUR: DEFAULT_REPORT_HOUR,
+}
+
+STORE_VERSION = 1
+STORE_KEY_PREFIX = "energy_report"
+CSV_SCHEMA_VERSION = 1
+ARCHIVE_FIELDS = (
+    "schema_version",
+    "record_status",
+    "year",
+    "month",
+    "period_start",
+    "period_end",
+    "measured_kwh",
+    "reconstructed_kwh",
+    "total_kwh",
+    "coverage_percent",
+    "unknown_duration_minutes",
+    "excluded_kwh",
+    "tariff_per_kwh",
+    "currency",
+    "total_cost",
+    "data_quality",
+    "origin",
+    "closed_at",
+)
+
+EVENT_REPORT_GENERATED = "energy_report_report_generated"
+
