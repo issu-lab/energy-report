@@ -2,6 +2,10 @@
 
 All notable changes to Energy Report are documented here.
 
+## 0.1.1 - 2026-08-30
+
+- Declared the integration config-entry-only after adding the authenticated export endpoint, clearing the corresponding Hassfest warning.
+
 ## 0.1.0 - 2026-08-30
 
 - Adopted numeric-only maturity: `0.0.x` alpha, `0.x` beta and `1.x` stable.
