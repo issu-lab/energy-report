@@ -14,6 +14,7 @@ CONF_ENERGY_SENSOR = "energy_sensor"
 CONF_POWER_SENSOR = "power_sensor"
 CONF_TARIFF = "tariff"
 CONF_NOTIFICATION_SERVICE = "notification_service"
+CONF_NOTIFICATION_TARGET = "notification_target"
 
 MODE_ENERGY = "energy"
 MODE_POWER = "power"
@@ -24,6 +25,7 @@ OPT_MAX_POWER_KW = "max_power_kw"
 OPT_SOURCE_TIMEOUT_MINUTES = "source_timeout_minutes"
 OPT_REPORT_HOUR = "report_hour"
 OPT_NOTIFICATION_SERVICE = CONF_NOTIFICATION_SERVICE
+OPT_NOTIFICATION_TARGET = CONF_NOTIFICATION_TARGET
 
 DEFAULT_MAX_POWER_KW = 10.0
 DEFAULT_SOURCE_TIMEOUT_MINUTES = 15
@@ -37,7 +39,8 @@ DEFAULTS = {
 
 STORE_VERSION = 1
 STORE_KEY_PREFIX = "energy_report"
-CSV_SCHEMA_VERSION = 1
+CSV_SCHEMA_VERSION = 2
+SUPPORTED_CSV_SCHEMA_VERSIONS = (1, 2)
 ARCHIVE_FIELDS = (
     "schema_version",
     "record_status",
@@ -56,8 +59,10 @@ ARCHIVE_FIELDS = (
     "total_cost",
     "data_quality",
     "origin",
+    "snapshot_at",
     "closed_at",
 )
 
-EVENT_REPORT_GENERATED = "energy_report_report_generated"
+ARCHIVE_FIELDS_V1 = tuple(field for field in ARCHIVE_FIELDS if field != "snapshot_at")
 
+EVENT_REPORT_GENERATED = "energy_report_report_generated"

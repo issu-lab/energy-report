@@ -4,8 +4,14 @@ from __future__ import annotations
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 
-from .const import DOMAIN, PLATFORMS
+from .const import (
+    CONF_NOTIFICATION_SERVICE,
+    CONF_NOTIFICATION_TARGET,
+    DOMAIN,
+    PLATFORMS,
+)
 from .controller import EnergyReportController
 
 
@@ -30,6 +36,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unloaded
 
 
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate legacy notify services to notify entities when available."""
+    if entry.version >= 2:
+        return True
+    data = dict(entry.data)
+    legacy = data.get(CONF_NOTIFICATION_SERVICE)
+    if legacy and legacy.startswith("notify."):
+        registry = er.async_get(hass)
+        if hass.states.get(legacy) is not None or registry.async_get(legacy) is not None:
+            data[CONF_NOTIFICATION_TARGET] = legacy
+    hass.config_entries.async_update_entry(entry, data=data, version=2)
+    return True
+
+
 async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
-

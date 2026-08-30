@@ -10,6 +10,7 @@ from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.helpers import selector
+from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
 
 from .archive import ArchiveError, ImportPreview
@@ -17,7 +18,7 @@ from .const import (
     CONF_ENERGY_SENSOR,
     CONF_INSTANCE_ID,
     CONF_NAME,
-    CONF_NOTIFICATION_SERVICE,
+    CONF_NOTIFICATION_TARGET,
     CONF_POWER_SENSOR,
     CONF_SOURCE_MODE,
     CONF_TARIFF,
@@ -28,7 +29,7 @@ from .const import (
     MODE_ENERGY,
     MODE_POWER,
     OPT_MAX_POWER_KW,
-    OPT_NOTIFICATION_SERVICE,
+    OPT_NOTIFICATION_TARGET,
     OPT_REPORT_HOUR,
     OPT_SOURCE_TIMEOUT_MINUTES,
     SOURCE_MODES,
@@ -41,6 +42,10 @@ POWER_UNITS = {"W", "kW", "MW"}
 
 def _entity_selector() -> selector.EntitySelector:
     return selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor"))
+
+
+def _notification_selector() -> selector.EntitySelector:
+    return selector.EntitySelector(selector.EntitySelectorConfig(domain="notify"))
 
 
 def _number(minimum: float, maximum: float, step: float = 0.1):
@@ -57,7 +62,7 @@ def _number(minimum: float, maximum: float, step: float = 0.1):
 class EnergyReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Set up a reusable Energy Report instance."""
 
-    VERSION = 1
+    VERSION = 2
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
@@ -106,9 +111,9 @@ class EnergyReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_reporting(self, user_input=None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            service = user_input[CONF_NOTIFICATION_SERVICE]
-            if not self._service_exists(service):
-                errors[CONF_NOTIFICATION_SERVICE] = "notification_service_not_found"
+            target = user_input[CONF_NOTIFICATION_TARGET]
+            if not self._notification_target_exists(target):
+                errors[CONF_NOTIFICATION_TARGET] = "notification_target_not_found"
             else:
                 self._data.update(user_input)
                 return await self.async_step_test_notification()
@@ -117,7 +122,7 @@ class EnergyReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_TARIFF, default=DEFAULT_TARIFF): _number(0, 10, 0.001),
-                    vol.Required(CONF_NOTIFICATION_SERVICE): selector.TextSelector(),
+                    vol.Required(CONF_NOTIFICATION_TARGET): _notification_selector(),
                 }
             ),
             errors=errors,
@@ -128,14 +133,14 @@ class EnergyReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             if user_input["send_test"]:
                 try:
-                    domain, service = self._data[CONF_NOTIFICATION_SERVICE].split(".", 1)
                     rendered = render_test_report(
                         self._data[CONF_NAME], self.hass.config.language
                     )
                     await self.hass.services.async_call(
-                        domain,
-                        service,
+                        "notify",
+                        "send_message",
                         {
+                            "entity_id": self._data[CONF_NOTIFICATION_TARGET],
                             "title": rendered.title,
                             "message": rendered.message,
                         },
@@ -220,12 +225,14 @@ class EnergyReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             and state.attributes.get("state_class") in expected_state_classes
         )
 
-    def _service_exists(self, service_ref: str) -> bool:
-        try:
-            domain, service = service_ref.split(".", 1)
-        except ValueError:
+    def _notification_target_exists(self, entity_id: str) -> bool:
+        if not isinstance(entity_id, str) or not entity_id.startswith("notify."):
             return False
-        return self.hass.services.has_service(domain, service)
+        registry = er.async_get(self.hass)
+        return (
+            self.hass.states.get(entity_id) is not None
+            or registry.async_get(entity_id) is not None
+        )
 
     @staticmethod
     def async_get_options_flow(config_entry):
@@ -250,27 +257,39 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
     async def async_step_settings(self, user_input=None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         if user_input is not None:
-            if not EnergyReportConfigFlow._service_exists(self, user_input[OPT_NOTIFICATION_SERVICE]):
-                errors[OPT_NOTIFICATION_SERVICE] = "notification_service_not_found"
+            target = user_input.get(OPT_NOTIFICATION_TARGET)
+            if not target or not EnergyReportConfigFlow._notification_target_exists(
+                self, target
+            ):
+                errors[OPT_NOTIFICATION_TARGET] = "notification_target_not_found"
             else:
                 return self.async_create_entry(title="", data=user_input)
+        current_target = self.config_entry.options.get(
+            OPT_NOTIFICATION_TARGET,
+            self.config_entry.data.get(CONF_NOTIFICATION_TARGET),
+        )
+        notification_key = (
+            vol.Required(OPT_NOTIFICATION_TARGET, default=current_target)
+            if current_target
+            else vol.Required(OPT_NOTIFICATION_TARGET)
+        )
         return self.async_show_form(
             step_id="settings",
             data_schema=vol.Schema(
                 {
+                    notification_key: _notification_selector(),
                     vol.Required(
-                        OPT_NOTIFICATION_SERVICE,
-                        default=self.config_entry.options.get(
-                            OPT_NOTIFICATION_SERVICE,
-                            self.config_entry.data[CONF_NOTIFICATION_SERVICE],
-                        ),
-                    ): selector.TextSelector(),
-                    vol.Required(OPT_MAX_POWER_KW, default=self._current(OPT_MAX_POWER_KW)): _number(0.1, 100, 0.1),
+                        OPT_MAX_POWER_KW,
+                        default=self._current(OPT_MAX_POWER_KW),
+                    ): _number(0.1, 100, 0.1),
                     vol.Required(
                         OPT_SOURCE_TIMEOUT_MINUTES,
                         default=self._current(OPT_SOURCE_TIMEOUT_MINUTES),
                     ): _number(1, 1440, 1),
-                    vol.Required(OPT_REPORT_HOUR, default=self._current(OPT_REPORT_HOUR)): _number(0, 23, 1),
+                    vol.Required(
+                        OPT_REPORT_HOUR,
+                        default=self._current(OPT_REPORT_HOUR),
+                    ): _number(0, 23, 1),
                 }
             ),
             errors=errors,
@@ -278,20 +297,20 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_test_notification(self, user_input=None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
-        service = self.config_entry.options.get(
-            OPT_NOTIFICATION_SERVICE,
-            self.config_entry.data[CONF_NOTIFICATION_SERVICE],
+        target = self.config_entry.options.get(
+            OPT_NOTIFICATION_TARGET,
+            self.config_entry.data.get(CONF_NOTIFICATION_TARGET),
         )
         if user_input is not None:
             controller = self.hass.data[DOMAIN][self.config_entry.entry_id]
-            if await controller.async_send_test_notification(service):
+            if await controller.async_send_test_notification(target):
                 return self.async_create_entry(title="", data=self.config_entry.options)
             errors["base"] = "notification_test_failed"
         return self.async_show_form(
             step_id="test_notification",
             data_schema=vol.Schema({vol.Required("confirm", default=True): bool}),
             errors=errors,
-            description_placeholders={"service": service},
+            description_placeholders={"target": target or "not configured"},
         )
 
     async def async_step_import_history(self, user_input=None) -> ConfigFlowResult:
@@ -299,13 +318,26 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             controller = self.hass.data[DOMAIN][self.config_entry.entry_id]
             try:
-                self._preview = await controller.async_preview_import(user_input["filename"])
+                self._preview = await controller.async_preview_uploaded_file(
+                    user_input["csv_file"]
+                )
                 return await self.async_step_confirm_import()
-            except ArchiveError as err:
-                errors["base"] = "history_import_invalid"
+            except (ArchiveError, OSError, ValueError) as err:
+                reason = str(err).split(":", 1)[0]
+                errors["base"] = {
+                    "closed_month_conflict": "history_closed_month_conflict",
+                    "invalid_headers": "history_invalid_headers",
+                    "open_month_must_be_current": "history_open_month_not_current",
+                }.get(reason, "history_import_invalid")
         return self.async_show_form(
             step_id="import_history",
-            data_schema=vol.Schema({vol.Required("filename"): selector.TextSelector()}),
+            data_schema=vol.Schema(
+                {
+                    vol.Required("csv_file"): selector.FileSelector(
+                        selector.FileSelectorConfig(accept=".csv")
+                    )
+                }
+            ),
             errors=errors,
         )
 
@@ -315,14 +347,30 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             if user_input["confirm"]:
                 controller = self.hass.data[DOMAIN][self.config_entry.entry_id]
-                await controller.async_apply_import(self._preview)
+                await controller.async_apply_import(
+                    self._preview,
+                    user_input.get("current_month_strategy", "keep_native"),
+                )
             return self.async_create_entry(title="", data=self.config_entry.options)
+        fields: dict[Any, Any] = {vol.Required("confirm", default=False): bool}
+        if self._preview.current_conflict_count:
+            fields[vol.Required("current_month_strategy", default="keep_native")] = (
+                selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=["keep_native", "replace_with_csv"],
+                        translation_key="current_month_strategy",
+                    )
+                )
+            )
         return self.async_show_form(
             step_id="confirm_import",
-            data_schema=vol.Schema({vol.Required("confirm", default=False): bool}),
+            data_schema=vol.Schema(fields),
             description_placeholders={
                 "filename": self._preview.path.name,
                 "closed_count": str(self._preview.closed_count),
                 "open_count": str(self._preview.open_count),
+                "new_count": str(self._preview.new_count),
+                "identical_count": str(self._preview.identical_count),
+                "current_conflict_count": str(self._preview.current_conflict_count),
             },
         )

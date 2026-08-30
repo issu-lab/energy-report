@@ -2,7 +2,7 @@
 
 ## Boundary
 
-Energy Report is a calculated Home Assistant device integration. It consumes states from existing sensor entities and calls one existing notification service. It does not communicate directly with meters, Shelly devices, brokers or cloud APIs.
+Energy Report is a calculated Home Assistant device integration. It consumes states from existing sensor entities and targets one existing Home Assistant `notify` entity or group through `notify.send_message`. It does not communicate directly with meters, Shelly devices, brokers or cloud APIs.
 
 Each config entry owns one controller, one versioned ledger, one stable archive directory and one set of entities. Entries never aggregate or mutate each other's data.
 
@@ -36,16 +36,17 @@ The internal ledger, not the device lifetime counter, is authoritative for month
 - Notification failure never blocks storage or CSV finalization.
 - An overdue close is recovered at startup and is idempotent.
 - Import validates the complete file before changing in-memory state.
-- Existing month conflicts reject the complete import.
+- Identical imported months are idempotently ignored.
+- Conflicting closed months reject the complete import and are never overwritten.
+- Replacing a conflicting open month requires an explicit user choice, preserves a Store backup and resets source baselines.
 - Persistent state is versioned; archive schema is independently versioned.
 
 ## Storage
 
-Home Assistant `Store` data is authoritative and keyed by config entry. It holds month records, baselines, source health and delivery evidence. CSV is a derived annual archive under `/config/energy_report/<instance-id>/`.
+Home Assistant `Store` data is authoritative and keyed by config entry. It holds month records, baselines, source health, import backups and delivery evidence. CSV is a derived annual archive under `/config/energy_report/<instance-id>/`. Import files are selected through Home Assistant's upload control and consumed from temporary managed storage; arbitrary server paths are not accepted by the UI.
 
 The instance directory is derived once from the original name and does not change when the displayed title changes.
 
 ## Out of scope for 0.1
 
 Solar production, export, batteries, negative flows, time-of-use tariffs, fixed charges, cross-entry aggregation, raw sample import and direct device communication.
-

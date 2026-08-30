@@ -5,9 +5,11 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from homeassistant.components import persistent_notification
+from homeassistant.components.file_upload import process_uploaded_file
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import Event, HomeAssistant, State, callback
@@ -25,6 +27,7 @@ from .const import (
     CONF_INSTANCE_ID,
     CONF_NAME,
     CONF_NOTIFICATION_SERVICE,
+    CONF_NOTIFICATION_TARGET,
     CONF_POWER_SENSOR,
     CONF_SOURCE_MODE,
     CONF_TARIFF,
@@ -36,6 +39,7 @@ from .const import (
     MODE_POWER,
     OPT_MAX_POWER_KW,
     OPT_NOTIFICATION_SERVICE,
+    OPT_NOTIFICATION_TARGET,
     OPT_REPORT_HOUR,
     OPT_SOURCE_TIMEOUT_MINUTES,
     STORE_KEY_PREFIX,
@@ -149,6 +153,9 @@ class EnergyReportController:
             "last_report_key": self.state.last_report_key,
             "last_notification_at": self.state.last_notification_at,
             "last_notification_error": self.state.last_notification_error,
+            "last_import_at": self.state.last_import_at,
+            "last_import_summary": self.state.last_import_summary,
+            "import_backup_count": len(self.state.import_backups),
             "last_error": self.state.last_error,
         }
 
@@ -381,7 +388,11 @@ class EnergyReportController:
         if not resend:
             self.hass.bus.async_fire(
                 EVENT_REPORT_GENERATED,
-                {"entry_id": self.entry.entry_id, "title": rendered.title, "message": rendered.message},
+                {
+                    "entry_id": self.entry.entry_id,
+                    "title": rendered.title,
+                    "message": rendered.message,
+                },
             )
         await self._async_save_and_publish()
         return success
@@ -389,21 +400,42 @@ class EnergyReportController:
     async def async_send_notification(
         self,
         rendered: RenderedReport,
-        service_override: str | None = None,
+        target_override: str | None = None,
     ) -> bool:
-        service_ref = service_override or self.entry.options.get(
-            OPT_NOTIFICATION_SERVICE, self.entry.data[CONF_NOTIFICATION_SERVICE]
+        target = target_override or self.entry.options.get(
+            OPT_NOTIFICATION_TARGET, self.entry.data.get(CONF_NOTIFICATION_TARGET)
         )
         try:
-            domain, service = service_ref.split(".", 1)
-            if not self.hass.services.has_service(domain, service):
-                raise ValueError("notification_service_not_found")
-            await self.hass.services.async_call(
-                domain,
-                service,
-                {"title": rendered.title, "message": rendered.message},
-                blocking=True,
-            )
+            if target:
+                if not self.hass.services.has_service("notify", "send_message"):
+                    raise ValueError("notify_send_message_not_found")
+                await self.hass.services.async_call(
+                    "notify",
+                    "send_message",
+                    {
+                        "entity_id": target,
+                        "title": rendered.title,
+                        "message": rendered.message,
+                    },
+                    blocking=True,
+                )
+            else:
+                # Compatibility path for config entries created before version 2.
+                service_ref = self.entry.options.get(
+                    OPT_NOTIFICATION_SERVICE,
+                    self.entry.data.get(CONF_NOTIFICATION_SERVICE),
+                )
+                if not service_ref:
+                    raise ValueError("notification_target_not_configured")
+                domain, service = service_ref.split(".", 1)
+                if not self.hass.services.has_service(domain, service):
+                    raise ValueError("notification_service_not_found")
+                await self.hass.services.async_call(
+                    domain,
+                    service,
+                    {"title": rendered.title, "message": rendered.message},
+                    blocking=True,
+                )
             return True
         except Exception as err:  # Home Assistant service failures vary by provider.
             _LOGGER.warning("Energy Report notification failed: %s", err)
@@ -416,12 +448,12 @@ class EnergyReportController:
             )
             return False
 
-    async def async_send_test_notification(self, service_ref: str | None = None) -> bool:
+    async def async_send_test_notification(self, target: str | None = None) -> bool:
         from .report import render_test_report
 
         return await self.async_send_notification(
             render_test_report(self.name, self.hass.config.language),
-            service_override=service_ref,
+            target_override=target,
         )
 
     async def async_resend_last_report(self) -> bool:
@@ -450,8 +482,50 @@ class EnergyReportController:
                 raise ArchiveError("open_month_must_be_current")
         return preview
 
-    async def async_apply_import(self, preview: ImportPreview) -> None:
-        years = self.archive.apply_import(preview, self.state)
+    async def async_preview_import_path(self, path: str | Path) -> ImportPreview:
+        preview = await self.hass.async_add_executor_job(
+            self.archive.preview_import_path,
+            Path(path),
+            self.state,
+        )
+        open_records = [record for record in preview.records if record.status == "open"]
+        if open_records:
+            record = open_records[0]
+            now = dt_util.now()
+            if (record.year, record.month) != (now.year, now.month):
+                from .archive import ArchiveError
+
+                raise ArchiveError("open_month_must_be_current")
+        return preview
+
+    async def async_preview_uploaded_file(self, uploaded_file_id: str) -> ImportPreview:
+        """Consume a Home Assistant upload and return a validated preview."""
+        def _preview_upload() -> ImportPreview:
+            with process_uploaded_file(self.hass, uploaded_file_id) as file_path:
+                return self.archive.preview_import_path(file_path, self.state)
+
+        preview = await self.hass.async_add_executor_job(_preview_upload)
+        open_records = [record for record in preview.records if record.status == "open"]
+        if open_records:
+            record = open_records[0]
+            now = dt_util.now()
+            if (record.year, record.month) != (now.year, now.month):
+                from .archive import ArchiveError
+
+                raise ArchiveError("open_month_must_be_current")
+        return preview
+
+    async def async_apply_import(
+        self,
+        preview: ImportPreview,
+        current_month_strategy: str = "keep_native",
+    ) -> None:
+        years = self.archive.apply_import(
+            preview,
+            self.state,
+            current_month_strategy,
+            dt_util.now().isoformat(),
+        )
         await self._async_save()
         for year in years:
             await self.hass.async_add_executor_job(self.archive.write_year, self.state, year)

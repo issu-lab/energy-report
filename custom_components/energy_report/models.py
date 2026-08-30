@@ -66,6 +66,7 @@ class MonthRecord:
     tariff_per_kwh: float = 0.0
     currency: str = "EUR"
     origin: str = "native"
+    snapshot_at: str | None = None
     closed_at: str | None = None
     notification_sent_at: str | None = None
 
@@ -146,6 +147,9 @@ class LedgerState:
     last_report_key: str | None = None
     last_notification_at: str | None = None
     last_notification_error: str | None = None
+    import_backups: list[dict[str, Any]] = field(default_factory=list)
+    last_import_at: str | None = None
+    last_import_summary: str | None = None
 
     def ensure_month(self, moment: datetime, tariff: float, currency: str) -> MonthRecord:
         key = month_key(moment)

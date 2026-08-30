@@ -24,15 +24,15 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ❌ Not yet |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.0-alpha.1` |
+| **Current version** | `0.1.0-alpha.2` |
 | **Minimum Home Assistant** | 2026.8.0 |
-| **Local tests** | ✅ 21 tests |
+| **Local tests** | ✅ 24 tests |
 | **Cumulative-energy validation** | ❌ Not yet |
 | **Power-only validation** | ❌ Not yet |
 | **Dual-source validation** | ❌ Not yet |
 
 > [!WARNING]
-> Version 0.1.0-alpha.1 is an initial testing release. Its accounting logic has dependency-free unit coverage, but the integration has not yet completed installation, migration or month-boundary validation on a live Home Assistant system.
+> Version 0.1.0-alpha.2 is a testing release. Its accounting and import logic have dependency-free unit coverage, but the integration has not yet completed month-boundary validation on a live Home Assistant system.
 
 > [!IMPORTANT]
 > Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
@@ -75,15 +75,15 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 📅 Timezone-aware monthly close with startup catch-up.
 - 📊 Current month, previous month and current year entities.
 - 💶 Modifiable tariff, current cost and month-end projections.
-- 📬 One configurable Home Assistant notification service per instance.
+- 📬 One selectable Home Assistant notification entity or group per instance.
 - 🔁 Native button to resend the last immutable monthly report.
 - 🗂️ Atomic annual CSV archives with a documented public schema.
-- 📥 Transactional CSV history import with preview and conflict rejection.
+- 📥 Native CSV upload with transactional preview and explicit conflict handling.
 - 🩺 Native diagnostics with measured, reconstructed and incomplete data quality.
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.1.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.2.
 
 ---
 
@@ -107,6 +107,8 @@ The button opens Energy Report directly as a custom integration repository in HA
 6. Restart Home Assistant.
 7. Open **Settings → Devices & services → Add integration**.
 8. Search for **Energy Report**.
+
+Alpha and beta builds are GitHub pre-releases. To track them by version instead of the default-branch commit, enable the repository's **Pre-release** switch entity in Home Assistant and then select **Update information** in HACS. Leave that switch disabled once stable releases are preferred.
 
 For local validation before publication, copy `custom_components/energy_report` into the Home Assistant `custom_components` directory and restart Home Assistant.
 
@@ -137,7 +139,7 @@ Unknown, unavailable, non-numeric, non-finite and negative readings never enter 
 
 ### 3. Cost and reporting
 
-Enter the tariff per kWh and one existing notification service, for example `notify.mobile_app_phone`. Energy Report can send a clearly labelled test notification before completing setup.
+Enter the tariff per kWh and select one existing `notify` entity. A Home Assistant notification group can be selected as one destination. Energy Report can send a clearly labelled test notification before completing setup.
 
 The initial wizard intentionally keeps plausibility, timeout and scheduling values out of the main path. They remain available from the integration's **Configure** action.
 
@@ -262,7 +264,7 @@ Home Assistant's versioned store is authoritative. Annual CSV files are portable
 The exact ordered schema is:
 
 ```csv
-schema_version,record_status,year,month,period_start,period_end,measured_kwh,reconstructed_kwh,total_kwh,coverage_percent,unknown_duration_minutes,excluded_kwh,tariff_per_kwh,currency,total_cost,data_quality,origin,closed_at
+schema_version,record_status,year,month,period_start,period_end,measured_kwh,reconstructed_kwh,total_kwh,coverage_percent,unknown_duration_minutes,excluded_kwh,tariff_per_kwh,currency,total_cost,data_quality,origin,snapshot_at,closed_at
 ```
 
 Generated annual archives contain closed records only.
@@ -279,12 +281,13 @@ Import rules:
 2. use `closed` for consolidated months;
 3. include at most one `open` record for the current month;
 4. keep all values non-negative and internally consistent;
-5. copy the file to `/config/energy_report/import`;
+5. for an open current-month row, set `snapshot_at` to the timestamp represented by its totals;
 6. open **Configure → Import CSV history**;
-7. enter the filename and review the preview;
-8. confirm only when month counts are correct.
+7. choose the CSV from the device running the browser and review the preview;
+8. if the current month conflicts, explicitly keep Energy Report data or replace it with the CSV snapshot;
+9. confirm only when all category counts are correct.
 
-The complete file is validated before state changes. Any existing-month conflict rejects the entire import. Imported records do not send notifications.
+The complete file is validated before state changes. Missing months are imported, identical months are ignored and conflicting closed months are rejected because they are immutable. Replacing the open month requires explicit confirmation, stores a backup of its native record and resets source baselines so later readings cannot bridge across the replacement. Imported records do not send notifications. Schema version 1 remains accepted for migration compatibility; new templates and archives use schema version 2.
 
 For the initial Lodi migration, monthly Shelly data will be reconstructed and reviewed in this public CSV format. The legacy AppDaemon JSON remains comparison evidence only; no Shelly- or AppDaemon-specific converter is embedded in the integration.
 
@@ -366,7 +369,8 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.1.
+- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.2.
+- Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 
 ---

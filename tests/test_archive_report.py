@@ -19,7 +19,7 @@ class ArchiveAndReportTests(unittest.TestCase):
         record.closed_at = "2026-08-01T08:00:00+00:00"
         return record
 
-    def test_archive_round_trip_and_conflict_rejection(self):
+    def test_archive_round_trip_and_identical_month_is_ignored(self):
         with TemporaryDirectory() as temporary:
             writer = archive.CsvArchive(temporary, "casa")
             state = models.LedgerState(months={"2026-07": self._closed_record()})
@@ -33,8 +33,9 @@ class ArchiveAndReportTests(unittest.TestCase):
             years = writer.apply_import(preview, imported)
             self.assertEqual(years, {2026})
             self.assertAlmostEqual(imported.months["2026-07"].total_kwh, 183.65)
-            with self.assertRaises(archive.ArchiveError):
-                writer.preview_import("history.csv", imported)
+            duplicate = writer.preview_import("history.csv", imported)
+            self.assertEqual(duplicate.identical_count, 1)
+            self.assertEqual(duplicate.new_count, 0)
 
     def test_import_path_cannot_escape_fixed_directory(self):
         with TemporaryDirectory() as temporary:
@@ -47,6 +48,7 @@ class ArchiveAndReportTests(unittest.TestCase):
             writer = archive.CsvArchive(temporary, "casa")
             imported = models.new_month(datetime(2026, 8, 15, tzinfo=UTC), 0.28, "EUR")
             imported.measured_kwh = 143.8
+            imported.snapshot_at = "2026-08-15T12:00:00+00:00"
             writer.instance_dir.mkdir(parents=True)
             # The generated archive intentionally omits open rows, so write the
             # documented row through the same serializer for import testing.
@@ -61,8 +63,67 @@ class ArchiveAndReportTests(unittest.TestCase):
                 months={"2026-08": models.new_month(datetime(2026, 8, 20, tzinfo=UTC), 0.28, "EUR")}
             )
             preview = writer.preview_import("open.csv", runtime)
-            writer.apply_import(preview, runtime)
+            writer.apply_import(preview, runtime, "replace_with_csv")
             self.assertEqual(runtime.months["2026-08"].total_kwh, 143.8)
+
+    def test_open_current_month_requires_explicit_replacement_and_keeps_backup(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            incoming = models.new_month(datetime(2026, 8, 15, tzinfo=UTC), 0.28, "EUR")
+            incoming.measured_kwh = 143.8
+            incoming.snapshot_at = "2026-08-15T12:00:00+00:00"
+            writer.import_dir.mkdir(parents=True)
+            import csv
+            path = writer.import_dir / "open.csv"
+            with path.open("w", newline="", encoding="utf-8") as handle:
+                csv_writer = csv.DictWriter(handle, fieldnames=archive.ARCHIVE_FIELDS)
+                csv_writer.writeheader()
+                csv_writer.writerow(writer._row(incoming))
+            native = models.new_month(datetime(2026, 8, 20, tzinfo=UTC), 0.28, "EUR")
+            native.measured_kwh = 12.5
+            runtime = models.LedgerState(
+                months={"2026-08": native},
+                last_energy_kwh=900.0,
+                last_energy_at="2026-08-20T10:00:00+00:00",
+            )
+            preview = writer.preview_import("open.csv", runtime)
+            self.assertEqual(preview.current_conflict_count, 1)
+            writer.apply_import(preview, runtime, "keep_native", "2026-08-20T12:00:00+00:00")
+            self.assertEqual(runtime.months["2026-08"].total_kwh, 12.5)
+            writer.apply_import(preview, runtime, "replace_with_csv", "2026-08-20T12:01:00+00:00")
+            self.assertEqual(runtime.months["2026-08"].total_kwh, 143.8)
+            self.assertEqual(len(runtime.import_backups), 1)
+            self.assertIsNone(runtime.last_energy_kwh)
+
+    def test_conflicting_closed_month_is_rejected(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            state = models.LedgerState(months={"2026-07": self._closed_record()})
+            changed = self._closed_record()
+            changed.measured_kwh += 1
+            writer.instance_dir.mkdir(parents=True)
+            target = writer.write_year(models.LedgerState(months={"2026-07": changed}), 2026)
+            writer.import_dir.mkdir(parents=True)
+            (writer.import_dir / "changed.csv").write_bytes(target.read_bytes())
+            with self.assertRaisesRegex(archive.ArchiveError, "closed_month_conflict"):
+                writer.preview_import("changed.csv", state)
+
+    def test_schema_version_one_remains_importable(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            record = self._closed_record()
+            row = writer._row(record)
+            row["schema_version"] = 1
+            row.pop("snapshot_at")
+            writer.import_dir.mkdir(parents=True)
+            import csv
+            path = writer.import_dir / "legacy.csv"
+            with path.open("w", newline="", encoding="utf-8") as handle:
+                csv_writer = csv.DictWriter(handle, fieldnames=archive.ARCHIVE_FIELDS_V1)
+                csv_writer.writeheader()
+                csv_writer.writerow(row)
+            preview = writer.preview_import("legacy.csv", models.LedgerState())
+            self.assertEqual(preview.new_count, 1)
 
     def test_report_is_compact_and_warnings_follow_cost(self):
         record = self._closed_record()

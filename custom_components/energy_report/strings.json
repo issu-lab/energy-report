@@ -4,14 +4,14 @@
     "step": {
       "user": {"title": "Create Energy Report", "description": "Choose a name and source strategy.", "data": {"name": "Name", "source_mode": "Source mode"}},
       "sources": {"title": "Consumption sources", "description": "Only native energy and power sensors with compatible metadata are accepted.", "data": {"energy_sensor": "Cumulative energy sensor", "power_sensor": "Instantaneous power sensor"}},
-      "reporting": {"title": "Cost and reporting", "data": {"tariff": "Tariff per kWh", "notification_service": "Notification service (for example notify.mobile_app_phone)"}},
+      "reporting": {"title": "Cost and reporting", "description": "Choose one notification entity. A notification group can be selected as a single destination.", "data": {"tariff": "Tariff per kWh", "notification_target": "Notification destination"}},
       "test_notification": {"title": "Test notification", "description": "Optionally send a test before creating the integration.", "data": {"send_test": "Send test notification"}},
       "reconfigure": {"title": "Replace sources", "description": "The ledger is preserved and the new source starts from a fresh baseline.", "data": {"source_mode": "Source mode", "energy_sensor": "Cumulative energy sensor", "power_sensor": "Instantaneous power sensor"}}
     },
     "error": {
       "invalid_energy_sensor": "Select a sensor with energy device class and Wh, kWh or MWh unit.",
       "invalid_power_sensor": "Select a sensor with power device class and W, kW or MW unit.",
-      "notification_service_not_found": "The notification service does not exist.",
+      "notification_target_not_found": "Select an available notification entity.",
       "notification_test_failed": "The test notification failed."
     },
     "abort": {"already_configured": "An instance with this name already exists."}
@@ -19,20 +19,24 @@
   "options": {
     "step": {
       "init": {"title": "Energy Report options", "menu_options": {"settings": "Settings", "test_notification": "Test notification", "import_history": "Import CSV history"}},
-      "settings": {"title": "Advanced settings", "data": {"notification_service": "Notification service", "max_power_kw": "Maximum plausible power (kW)", "source_timeout_minutes": "Cumulative source timeout (minutes)", "report_hour": "Monthly report hour"}},
-      "test_notification": {"title": "Test notification", "description": "Send a test through {service}.", "data": {"confirm": "Send test"}},
-      "import_history": {"title": "Import CSV history", "description": "Place the CSV in /config/energy_report/import and enter its filename. Nothing is changed before preview confirmation.", "data": {"filename": "CSV filename"}},
-      "confirm_import": {"title": "Confirm history import", "description": "File: {filename}. Closed months: {closed_count}. Open months: {open_count}.", "data": {"confirm": "Import these records"}}
+      "settings": {"title": "Advanced settings", "data": {"notification_target": "Notification destination", "max_power_kw": "Maximum plausible power (kW)", "source_timeout_minutes": "Cumulative source timeout (minutes)", "report_hour": "Monthly report hour"}},
+      "test_notification": {"title": "Test notification", "description": "Send a test through {target}.", "data": {"confirm": "Send test"}},
+      "import_history": {"title": "Import CSV history", "description": "Choose a CSV from this device. Energy Report validates it completely before showing a preview or changing the ledger.", "data": {"csv_file": "CSV file"}},
+      "confirm_import": {"title": "Confirm history import", "description": "File: {filename}. Closed: {closed_count}; open: {open_count}; new: {new_count}; already identical: {identical_count}; current-month conflicts: {current_conflict_count}. Closed conflicts are never overwritten. If the open month conflicts, choose whether to keep native data or replace it with the CSV snapshot.", "data": {"confirm": "Import these records", "current_month_strategy": "Current month"}}
     },
     "error": {
-      "notification_service_not_found": "The notification service does not exist.",
+      "notification_target_not_found": "Select an available notification entity.",
       "notification_test_failed": "The test notification failed.",
-      "history_import_invalid": "The CSV is invalid, conflicts with existing months, or does not match the documented schema."
+      "history_import_invalid": "The CSV is invalid or does not match a supported schema.",
+      "history_invalid_headers": "The CSV columns do not match the documented Energy Report schema.",
+      "history_closed_month_conflict": "A closed month differs from the existing ledger. Closed months are never overwritten.",
+      "history_open_month_not_current": "An open CSV record must refer to the current Home Assistant month."
     },
     "abort": {"missing_import_preview": "The import preview is no longer available."}
   },
   "selector": {
-    "source_mode": {"options": {"energy": "Cumulative energy", "power": "Instantaneous power", "dual": "Energy with power verification"}}
+    "source_mode": {"options": {"energy": "Cumulative energy", "power": "Instantaneous power", "dual": "Energy with power verification"}},
+    "current_month_strategy": {"options": {"keep_native": "Keep data collected by Energy Report", "replace_with_csv": "Replace with the CSV snapshot"}}
   },
   "entity": {
     "sensor": {

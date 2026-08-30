@@ -24,7 +24,10 @@ Version 0.1 is acceptable only when all applicable checks pass.
 
 - Annual CSV uses the documented ordered schema and atomic replacement.
 - Generated archives contain closed months only.
-- Import validates the whole file, previews counts and rejects conflicts.
+- Import uploads through the native file selector and validates the whole file before preview.
+- Preview distinguishes new, identical, closed-conflicting and open-conflicting months.
+- Identical months are ignored; conflicting closed months are rejected.
+- Current-month replacement is explicit, backed up and followed by a fresh source baseline.
 - At most one open current-month record can be imported.
 - Imported data does not send notifications.
 - The public importer contains no AppDaemon- or Shelly-specific code.
@@ -34,7 +37,7 @@ Version 0.1 is acceptable only when all applicable checks pass.
 - Multiple config entries remain independent.
 - Source selectors reject incompatible metadata.
 - Reconfigure explicitly replaces sources and establishes new baselines.
-- One notification service is configurable and testable.
+- One available notification entity or group is selectable and testable.
 - Monthly report is compact and exposes reconstructed or incomplete data.
 - Resend uses the immutable last report and does not touch the archive.
 - Failure creates a persistent notification and diagnostic evidence.
