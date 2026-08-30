@@ -227,6 +227,14 @@ class LedgerState:
         self.last_report_key = key
         return record
 
+    @property
+    def latest_closed_month_key(self) -> str | None:
+        """Return the newest closed month, including imported history."""
+        closed_keys = [
+            key for key, record in self.months.items() if record.status == "closed"
+        ]
+        return max(closed_keys, default=None)
+
     def to_dict(self) -> dict[str, Any]:
         raw = asdict(self)
         raw["months"] = {key: value.to_dict() for key, value in self.months.items()}

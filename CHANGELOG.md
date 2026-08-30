@@ -2,6 +2,15 @@
 
 All notable changes to Energy Report are documented here.
 
+## 0.1.0 - 2026-08-30
+
+- Adopted numeric-only maturity: `0.0.x` alpha, `0.x` beta and `1.x` stable.
+- Enabled sending or resending the newest closed report even when it came from CSV import.
+- Identified the target instance by name and stable ID throughout CSV import.
+- Added per-instance current-year and previous-year CSV exports through an authenticated Home Assistant download.
+- Included the open month and a fresh `snapshot_at` in current-year backups so they can be safely restored through the existing importer.
+- Kept operational archives closed-only and preserved import isolation between config entries.
+
 ## 0.1.0-alpha.3 - 2026-08-30
 
 - Added a safe current-month merge for non-overlapping CSV and native data.

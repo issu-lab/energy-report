@@ -90,6 +90,23 @@ class AccountingTests(unittest.TestCase):
         record.status = "closed"
         self.assertEqual(record.data_quality, "incomplete")
 
+    def test_latest_closed_month_includes_imported_history(self):
+        state = models.LedgerState(last_report_key=None)
+        july = models.new_month(datetime(2026, 7, 1, tzinfo=UTC), 0.28, "EUR")
+        july.status = "closed"
+        july.origin = "imported"
+        august = models.new_month(datetime(2026, 8, 1, tzinfo=UTC), 0.28, "EUR")
+        state.months = {"2026-08": august, "2026-07": july}
+        self.assertEqual(state.latest_closed_month_key, "2026-07")
+
+    def test_latest_closed_month_prefers_newest_record(self):
+        state = models.LedgerState(last_report_key="2026-06")
+        for month in (6, 7):
+            record = models.new_month(datetime(2026, month, 1, tzinfo=UTC), 0.28, "EUR")
+            record.status = "closed"
+            state.months[f"2026-{month:02d}"] = record
+        self.assertEqual(state.latest_closed_month_key, "2026-07")
+
 
 if __name__ == "__main__":
     unittest.main()

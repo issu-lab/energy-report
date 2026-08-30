@@ -457,9 +457,10 @@ class EnergyReportController:
         )
 
     async def async_resend_last_report(self) -> bool:
-        if not self.state.last_report_key:
+        report_key = self.state.latest_closed_month_key
+        if report_key is None:
             return False
-        record = self.state.months.get(self.state.last_report_key)
+        record = self.state.months.get(report_key)
         return False if record is None else await self._async_send_record(record, resend=True)
 
     async def async_set_tariff(self, value: float) -> None:
@@ -518,6 +519,15 @@ class EnergyReportController:
         for year in years:
             await self.hass.async_add_executor_job(self.archive.write_year, self.state, year)
         self._publish()
+
+    async def async_export_year(self, year: int) -> Path:
+        """Generate an import-compatible annual backup for this entry."""
+        return await self.hass.async_add_executor_job(
+            self.archive.write_export,
+            self.state,
+            year,
+            dt_util.now().isoformat(),
+        )
 
     async def _async_save_and_publish(self) -> None:
         await self._async_save()

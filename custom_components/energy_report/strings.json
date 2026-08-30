@@ -18,11 +18,13 @@
   },
   "options": {
     "step": {
-      "init": {"title": "Energy Report options", "menu_options": {"settings": "Settings", "test_notification": "Test notification", "import_history": "Import CSV history"}},
+      "init": {"title": "Energy Report options", "menu_options": {"settings": "Settings", "test_notification": "Test notification", "import_history": "Import CSV history", "export_history": "Export CSV history"}},
       "settings": {"title": "Advanced settings", "data": {"notification_target": "Notification destination", "max_power_kw": "Maximum plausible power (kW)", "source_timeout_minutes": "Cumulative source timeout (minutes)", "report_hour": "Monthly report hour"}},
       "test_notification": {"title": "Test notification", "description": "Send a test through {target}.", "data": {"confirm": "Send test"}},
-      "import_history": {"title": "Import CSV history", "description": "Choose a CSV from this device. Energy Report validates it completely before showing a preview or changing the ledger.", "data": {"csv_file": "CSV file"}},
-      "confirm_import": {"title": "Confirm history import", "description": "File: {filename}. Closed: {closed_count}; open: {open_count}; new: {new_count}; already identical: {identical_count}; current-month conflicts: {current_conflict_count}; safe merge: {merge_status}. Closed conflicts are never overwritten. A merge is offered only when snapshot_at proves that CSV history ends before native collection began.", "data": {"confirm": "Import these records", "current_month_strategy": "Current month"}}
+      "import_history": {"title": "Import CSV history", "description": "Target instance: {instance_name} ({instance_id}). Choose a CSV from this device. Only this instance's isolated ledger can be changed, after validation and confirmation.", "data": {"csv_file": "CSV file"}},
+      "confirm_import": {"title": "Confirm history import", "description": "Target instance: {instance_name} ({instance_id}). File: {filename}. Closed: {closed_count}; open: {open_count}; new: {new_count}; already identical: {identical_count}; current-month conflicts: {current_conflict_count}; safe merge: {merge_status}. Closed conflicts are never overwritten. A merge is offered only when snapshot_at proves that CSV history ends before native collection began.", "data": {"confirm": "Import these records", "current_month_strategy": "Current month"}},
+      "export_history": {"title": "Export CSV history", "description": "Target instance: {instance_name} ({instance_id}). Choose the current or previous year.", "data": {"year": "Year"}},
+      "export_ready": {"title": "CSV export ready", "description": "Instance: {instance_name} ({instance_id}); year: {year}. [Download CSV]({download_url}). The authenticated download regenerates the file from the current ledger.", "data": {"done": "Finish"}}
     },
     "error": {
       "notification_target_not_found": "Select an available notification entity.",
@@ -32,7 +34,7 @@
       "history_closed_month_conflict": "A closed month differs from the existing ledger. Closed months are never overwritten.",
       "history_open_month_not_current": "An open CSV record must refer to the current Home Assistant month."
     },
-    "abort": {"missing_import_preview": "The import preview is no longer available."}
+    "abort": {"missing_import_preview": "The import preview is no longer available.", "invalid_export_year": "Only the current and previous year can be exported.", "missing_export_selection": "The export selection is no longer available."}
   },
   "selector": {
     "source_mode": {"options": {"energy": "Cumulative energy", "power": "Instantaneous power", "dual": "Energy with power verification"}},
@@ -51,6 +53,6 @@
       "diagnostics": {"name": "Diagnostics"}
     },
     "number": {"tariff": {"name": "Tariff"}},
-    "button": {"resend_last_report": {"name": "Resend last report"}}
+    "button": {"resend_last_report": {"name": "Send or resend latest report"}}
   }
 }

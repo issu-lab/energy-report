@@ -19,20 +19,20 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 
 | Field | Current state |
 |---|---|
-| **Maturity** | 🟡 Alpha |
-| **Used in my homelab** | ❌ Not yet |
+| **Maturity** | 🟡 Beta |
+| **Used in my homelab** | ✅ Lodi |
 | **Recommended for production** | ❌ Not yet |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.0-alpha.3` |
+| **Current version** | `0.1.0` |
 | **Minimum Home Assistant** | 2026.8.0 |
-| **Local tests** | ✅ 27 tests |
+| **Local tests** | ✅ 31 tests |
 | **Cumulative-energy validation** | ❌ Not yet |
 | **Power-only validation** | ❌ Not yet |
 | **Dual-source validation** | ❌ Not yet |
 
 > [!WARNING]
-> Version 0.1.0-alpha.3 is a testing release. Its accounting and import logic have dependency-free unit coverage, but the integration has not yet completed month-boundary validation on a live Home Assistant system.
+> Version 0.1.0 is a beta release running in the Lodi homelab. Its accounting, import and export logic have dependency-free unit coverage, but the integration has not yet completed a live month-boundary validation.
 
 > [!IMPORTANT]
 > Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
@@ -76,14 +76,14 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 📊 Current month, previous month and current year entities.
 - 💶 Modifiable tariff, current cost and month-end projections.
 - 📬 One selectable Home Assistant notification entity or group per instance.
-- 🔁 Native button to resend the last immutable monthly report.
+- 🔁 Native button to send or resend the latest closed monthly report, including imported history.
 - 🗂️ Atomic annual CSV archives with a documented public schema.
 - 📥 Native CSV upload with transactional preview and explicit conflict handling.
 - 🩺 Native diagnostics with measured, reconstructed and incomplete data quality.
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.3.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0.
 
 ---
 
@@ -108,7 +108,7 @@ The button opens Energy Report directly as a custom integration repository in HA
 7. Open **Settings → Devices & services → Add integration**.
 8. Search for **Energy Report**.
 
-Alpha and beta builds are GitHub pre-releases. To track them by version instead of the default-branch commit, enable the repository's **Pre-release** switch entity in Home Assistant and then select **Update information** in HACS. Leave that switch disabled once stable releases are preferred.
+Energy Report uses numeric versions without GitHub pre-release suffixes: `0.0.x` identifies alpha development, `0.x` beta development and `1.x` stable releases. HACS therefore follows regular version tags without requiring its pre-release switch.
 
 For local validation before publication, copy `custom_components/energy_report` into the Home Assistant `custom_components` directory and restart Home Assistant.
 
@@ -231,7 +231,7 @@ Example compact report:
 
 Reconstructed consumption appears only when present. Coverage problems, unquantified gaps and excluded increments are placed after tariff and total cost as explicit warnings.
 
-The **Resend last report** button uses the already consolidated record. It does not recalculate the month, change storage or duplicate CSV rows.
+The **Send or resend latest report** button uses the newest consolidated record, including an imported closed month. It does not recalculate the month, change storage or duplicate CSV rows. Import itself never sends notifications automatically.
 
 ---
 
@@ -244,7 +244,7 @@ Each configured instance creates:
 - current-year energy and cost;
 - previous-month energy and cost;
 - modifiable tariff;
-- resend-last-report button;
+- send-or-resend-latest-report button;
 - disabled-by-default diagnostic sensor.
 
 Forecasts use the average rate of the covered current-month interval. They remain unavailable during the first three complete days and when coverage is below 80%.
@@ -267,7 +267,7 @@ The exact ordered schema is:
 schema_version,record_status,year,month,period_start,period_end,measured_kwh,reconstructed_kwh,total_kwh,coverage_percent,unknown_duration_minutes,excluded_kwh,tariff_per_kwh,currency,total_cost,data_quality,origin,snapshot_at,closed_at
 ```
 
-Generated annual archives contain closed records only.
+Operational annual archives contain closed records only. From **Configure → Export CSV history**, the current-year backup also includes the open month with a fresh `snapshot_at`; the previous-year backup contains closed months. The resulting instance-specific file is downloaded through an authenticated Home Assistant endpoint and can be reimported with the same CSV importer.
 
 ---
 
@@ -283,7 +283,7 @@ Import rules:
 4. keep all values non-negative and internally consistent;
 5. for an open current-month row, set `snapshot_at` to the timestamp represented by its totals;
 6. open **Configure → Import CSV history**;
-7. choose the CSV from the device running the browser and review the preview;
+7. verify the target instance name and stable ID, choose the CSV from the device running the browser and review the preview;
 8. if the current month conflicts, explicitly keep Energy Report data, safely merge non-overlapping periods or replace it with the CSV snapshot;
 9. confirm only when all category counts are correct.
 
@@ -362,14 +362,14 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 
 ## Known Limitations
 
-- Live Home Assistant validation has not started.
-- HACS and Hassfest currently run only in the prepared GitHub workflow.
+- Live Home Assistant validation is in progress at Lodi; month-boundary behavior remains to be observed.
+- HACS and Hassfest validation run in the GitHub workflow.
 - Power integration accuracy depends on update frequency and source availability.
 - Consumption-only accounting does not model photovoltaic production or export.
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.3.
+- Instances are independent and cannot be aggregated by Energy Report 0.1.0.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 

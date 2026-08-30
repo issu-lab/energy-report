@@ -24,6 +24,8 @@ Version 0.1 is acceptable only when all applicable checks pass.
 
 - Annual CSV uses the documented ordered schema and atomic replacement.
 - Generated archives contain closed months only.
+- On-demand current-year export contains the open month with a timezone-aware snapshot; previous-year export contains closed months.
+- Exported files round-trip through the public importer and are scoped to the selected config entry.
 - Import uploads through the native file selector and validates the whole file before preview.
 - Preview distinguishes new, identical, closed-conflicting and open-conflicting months.
 - Identical months are ignored; conflicting closed months are rejected.
@@ -40,7 +42,7 @@ Version 0.1 is acceptable only when all applicable checks pass.
 - Reconfigure explicitly replaces sources and establishes new baselines.
 - One available notification entity or group is selectable and testable.
 - Monthly report is compact and exposes reconstructed or incomplete data.
-- Resend uses the immutable last report and does not touch the archive.
+- Send/resend uses the newest closed record, including imported history, and does not touch the archive.
 - Failure creates a persistent notification and diagnostic evidence.
 - Diagnostics contain no notification target or source entity IDs.
 

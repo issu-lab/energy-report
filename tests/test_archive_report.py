@@ -37,6 +37,42 @@ class ArchiveAndReportTests(unittest.TestCase):
             self.assertEqual(duplicate.identical_count, 1)
             self.assertEqual(duplicate.new_count, 0)
 
+    def test_export_includes_open_month_and_is_importable(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            closed = self._closed_record()
+            opened = models.new_month(datetime(2026, 8, 30, tzinfo=UTC), 0.28, "EUR")
+            opened.measured_kwh = 42.5
+            state = models.LedgerState(
+                months={"2026-07": closed, "2026-08": opened}
+            )
+            target = writer.write_export(
+                state, 2026, "2026-08-30T10:00:00+00:00"
+            )
+            self.assertEqual(target.name, "energy-report-casa-2026.csv")
+            preview = writer.preview_import_path(target, models.LedgerState())
+            self.assertEqual(preview.closed_count, 1)
+            self.assertEqual(preview.open_count, 1)
+            self.assertEqual(
+                preview.records[-1].snapshot_at, "2026-08-30T10:00:00+00:00"
+            )
+
+    def test_operational_archive_still_excludes_open_month(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            state = models.LedgerState(
+                months={
+                    "2026-07": self._closed_record(),
+                    "2026-08": models.new_month(
+                        datetime(2026, 8, 30, tzinfo=UTC), 0.28, "EUR"
+                    ),
+                }
+            )
+            target = writer.write_year(state, 2026)
+            preview = writer.preview_import_path(target, models.LedgerState())
+            self.assertEqual(preview.closed_count, 1)
+            self.assertEqual(preview.open_count, 0)
+
     def test_import_path_cannot_escape_fixed_directory(self):
         with TemporaryDirectory() as temporary:
             writer = archive.CsvArchive(temporary, "casa")

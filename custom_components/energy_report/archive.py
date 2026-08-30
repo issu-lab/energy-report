@@ -47,14 +47,42 @@ class CsvArchive:
         self.import_dir = self.root / "import"
 
     def write_year(self, state: LedgerState, year: int) -> Path:
-        """Atomically rewrite one annual archive from authoritative state."""
+        """Atomically rewrite the closed-month operational archive."""
+        return self._write_records(
+            state,
+            year,
+            self.instance_dir / f"energy-report-{year}.csv",
+            include_open=False,
+        )
+
+    def write_export(self, state: LedgerState, year: int, snapshot_at: str) -> Path:
+        """Create an import-compatible backup, including an open month snapshot."""
+        target = self.instance_dir / f"energy-report-{self.instance_dir.name}-{year}.csv"
+        return self._write_records(
+            state,
+            year,
+            target,
+            include_open=True,
+            snapshot_at=snapshot_at,
+        )
+
+    def _write_records(
+        self,
+        state: LedgerState,
+        year: int,
+        target: Path,
+        *,
+        include_open: bool,
+        snapshot_at: str | None = None,
+    ) -> Path:
+        """Atomically write selected annual records from authoritative state."""
         self.instance_dir.mkdir(parents=True, exist_ok=True)
-        target = self.instance_dir / f"energy-report-{year}.csv"
         records = sorted(
             (
                 record
                 for record in state.months.values()
-                if record.year == year and record.status == "closed"
+                if record.year == year
+                and (record.status == "closed" or include_open)
             ),
             key=lambda record: record.month,
         )
@@ -70,7 +98,10 @@ class CsvArchive:
             writer = csv.DictWriter(handle, fieldnames=ARCHIVE_FIELDS)
             writer.writeheader()
             for record in records:
-                writer.writerow(self._row(record))
+                row = self._row(record)
+                if record.status == "open":
+                    row["snapshot_at"] = snapshot_at or record.snapshot_at or ""
+                writer.writerow(row)
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, target)

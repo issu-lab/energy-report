@@ -13,6 +13,13 @@ from .const import (
     PLATFORMS,
 )
 from .controller import EnergyReportController
+from .http import EnergyReportExportView
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register integration-wide authenticated HTTP views."""
+    hass.http.register_view(EnergyReportExportView())
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

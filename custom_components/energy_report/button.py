@@ -29,8 +29,7 @@ class EnergyReportResendButton(EnergyReportEntity, ButtonEntity):
 
     @property
     def available(self) -> bool:
-        return self.controller.state.last_report_key is not None
+        return self.controller.state.latest_closed_month_key is not None
 
     async def async_press(self) -> None:
         await self.controller.async_resend_last_report()
-

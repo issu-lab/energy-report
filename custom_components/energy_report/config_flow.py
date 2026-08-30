@@ -12,6 +12,7 @@ from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.helpers import selector
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import slugify
+from homeassistant.util import dt as dt_util
 
 from .archive import ArchiveError, ImportPreview
 from .const import (
@@ -248,7 +249,12 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None) -> ConfigFlowResult:
         return self.async_show_menu(
             step_id="init",
-            menu_options=["settings", "test_notification", "import_history"],
+            menu_options=[
+                "settings",
+                "test_notification",
+                "import_history",
+                "export_history",
+            ],
         )
 
     def _current(self, key: str):
@@ -339,6 +345,7 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
                 }
             ),
             errors=errors,
+            description_placeholders=self._import_target_placeholders(),
         )
 
     async def async_step_confirm_import(self, user_input=None) -> ConfigFlowResult:
@@ -376,6 +383,7 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
             step_id="confirm_import",
             data_schema=vol.Schema(fields),
             description_placeholders={
+                **self._import_target_placeholders(),
                 "filename": self._preview.path.name,
                 "closed_count": str(self._preview.closed_count),
                 "open_count": str(self._preview.open_count),
@@ -389,3 +397,50 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
                 ),
             },
         )
+
+    def _import_target_placeholders(self) -> dict[str, str]:
+        """Identify the config entry whose isolated ledger will be changed."""
+        return {
+            "instance_name": self.config_entry.title,
+            "instance_id": self.config_entry.data[CONF_INSTANCE_ID],
+        }
+
+    async def async_step_export_history(self, user_input=None) -> ConfigFlowResult:
+        """Offer authenticated downloads for this entry's supported years."""
+        now = dt_util.now()
+        years = [now.year, now.year - 1]
+        if user_input is not None:
+            year = int(user_input["year"])
+            if year not in years:
+                return self.async_abort(reason="invalid_export_year")
+            return self.async_show_form(
+                step_id="export_ready",
+                data_schema=vol.Schema({vol.Required("done", default=True): bool}),
+                description_placeholders={
+                    **self._import_target_placeholders(),
+                    "year": str(year),
+                    "download_url": (
+                        f"/api/energy_report/export/{self.config_entry.entry_id}/{year}"
+                    ),
+                },
+            )
+        return self.async_show_form(
+            step_id="export_history",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("year", default=now.year): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=[str(year) for year in years],
+                            mode=selector.SelectSelectorMode.DROPDOWN,
+                        )
+                    )
+                }
+            ),
+            description_placeholders=self._import_target_placeholders(),
+        )
+
+    async def async_step_export_ready(self, user_input=None) -> ConfigFlowResult:
+        """Close the options flow after the user downloads the export."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=self.config_entry.options)
+        return self.async_abort(reason="missing_export_selection")
