@@ -472,15 +472,7 @@ class EnergyReportController:
             filename,
             self.state,
         )
-        open_records = [record for record in preview.records if record.status == "open"]
-        if open_records:
-            record = open_records[0]
-            now = dt_util.now()
-            if (record.year, record.month) != (now.year, now.month):
-                from .archive import ArchiveError
-
-                raise ArchiveError("open_month_must_be_current")
-        return preview
+        return self._finalize_import_preview(preview)
 
     async def async_preview_import_path(self, path: str | Path) -> ImportPreview:
         preview = await self.hass.async_add_executor_job(
@@ -488,15 +480,7 @@ class EnergyReportController:
             Path(path),
             self.state,
         )
-        open_records = [record for record in preview.records if record.status == "open"]
-        if open_records:
-            record = open_records[0]
-            now = dt_util.now()
-            if (record.year, record.month) != (now.year, now.month):
-                from .archive import ArchiveError
-
-                raise ArchiveError("open_month_must_be_current")
-        return preview
+        return self._finalize_import_preview(preview)
 
     async def async_preview_uploaded_file(self, uploaded_file_id: str) -> ImportPreview:
         """Consume a Home Assistant upload and return a validated preview."""
@@ -505,6 +489,10 @@ class EnergyReportController:
                 return self.archive.preview_import_path(file_path, self.state)
 
         preview = await self.hass.async_add_executor_job(_preview_upload)
+        return self._finalize_import_preview(preview)
+
+    def _finalize_import_preview(self, preview: ImportPreview) -> ImportPreview:
+        """Validate the open period and prove whether a current merge is safe."""
         open_records = [record for record in preview.records if record.status == "open"]
         if open_records:
             record = open_records[0]
@@ -513,7 +501,7 @@ class EnergyReportController:
                 from .archive import ArchiveError
 
                 raise ArchiveError("open_month_must_be_current")
-        return preview
+        return self.archive.prepare_current_merge(preview, self.entry.created_at)
 
     async def async_apply_import(
         self,

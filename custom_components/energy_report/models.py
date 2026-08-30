@@ -67,6 +67,8 @@ class MonthRecord:
     currency: str = "EUR"
     origin: str = "native"
     snapshot_at: str | None = None
+    imported_snapshot_measured_kwh: float | None = None
+    imported_snapshot_reconstructed_kwh: float | None = None
     closed_at: str | None = None
     notification_sent_at: str | None = None
 

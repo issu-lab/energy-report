@@ -24,15 +24,15 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ❌ Not yet |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.0-alpha.2` |
+| **Current version** | `0.1.0-alpha.3` |
 | **Minimum Home Assistant** | 2026.8.0 |
-| **Local tests** | ✅ 24 tests |
+| **Local tests** | ✅ 27 tests |
 | **Cumulative-energy validation** | ❌ Not yet |
 | **Power-only validation** | ❌ Not yet |
 | **Dual-source validation** | ❌ Not yet |
 
 > [!WARNING]
-> Version 0.1.0-alpha.2 is a testing release. Its accounting and import logic have dependency-free unit coverage, but the integration has not yet completed month-boundary validation on a live Home Assistant system.
+> Version 0.1.0-alpha.3 is a testing release. Its accounting and import logic have dependency-free unit coverage, but the integration has not yet completed month-boundary validation on a live Home Assistant system.
 
 > [!IMPORTANT]
 > Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
@@ -83,7 +83,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.2.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.0-alpha.3.
 
 ---
 
@@ -284,10 +284,10 @@ Import rules:
 5. for an open current-month row, set `snapshot_at` to the timestamp represented by its totals;
 6. open **Configure → Import CSV history**;
 7. choose the CSV from the device running the browser and review the preview;
-8. if the current month conflicts, explicitly keep Energy Report data or replace it with the CSV snapshot;
+8. if the current month conflicts, explicitly keep Energy Report data, safely merge non-overlapping periods or replace it with the CSV snapshot;
 9. confirm only when all category counts are correct.
 
-The complete file is validated before state changes. Missing months are imported, identical months are ignored and conflicting closed months are rejected because they are immutable. Replacing the open month requires explicit confirmation, stores a backup of its native record and resets source baselines so later readings cannot bridge across the replacement. Imported records do not send notifications. Schema version 1 remains accepted for migration compatibility; new templates and archives use schema version 2.
+The complete file is validated before state changes. Missing months are imported, identical months are ignored and conflicting closed months are rejected because they are immutable. A safe merge is offered only when the timezone-aware CSV `snapshot_at` is not later than the Home Assistant config-entry creation time: the CSV balance is then added to consumption collected natively after activation, while the current hardware baselines remain in place. Replacement remains an explicit alternative; it stores a backup and resets baselines. Imported records do not send notifications. Schema version 1 remains accepted for closed-history migration, but safe current-month merging requires schema version 2.
 
 For the initial Lodi migration, monthly Shelly data will be reconstructed and reviewed in this public CSV format. The legacy AppDaemon JSON remains comparison evidence only; no Shelly- or AppDaemon-specific converter is embedded in the integration.
 
@@ -369,7 +369,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.2.
+- Instances are independent and cannot be aggregated by Energy Report 0.1.0-alpha.3.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 

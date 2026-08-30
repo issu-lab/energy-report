@@ -28,6 +28,7 @@ Version 0.1 is acceptable only when all applicable checks pass.
 - Preview distinguishes new, identical, closed-conflicting and open-conflicting months.
 - Identical months are ignored; conflicting closed months are rejected.
 - Current-month replacement is explicit, backed up and followed by a fresh source baseline.
+- Current-month merge is offered only with proof of non-overlap and preserves the active source baseline.
 - At most one open current-month record can be imported.
 - Imported data does not send notifications.
 - The public importer contains no AppDaemon- or Shelly-specific code.

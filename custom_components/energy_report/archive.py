@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from tempfile import NamedTemporaryFile
@@ -30,6 +30,8 @@ class ImportPreview:
     new_count: int
     identical_count: int
     current_conflict_count: int
+    current_merge_safe: bool = False
+    native_started_at: str | None = None
 
 
 class ArchiveError(ValueError):
@@ -108,7 +110,9 @@ class CsvArchive:
                     raise ArchiveError(f"month_conflict:{key}")
                 if existing is None:
                     new_count += 1
-                elif self._records_equal(existing, record):
+                elif self._records_equal(existing, record) or self._already_merged(
+                    existing, record
+                ):
                     identical_count += 1
                 elif existing.status == "open" and record.status == "open":
                     current_conflict_count += 1
@@ -133,6 +137,28 @@ class CsvArchive:
         )
 
     @staticmethod
+    def prepare_current_merge(
+        preview: ImportPreview,
+        native_started_at: datetime,
+    ) -> ImportPreview:
+        """Mark a preview mergeable only when CSV ends before native accounting."""
+        open_records = [record for record in preview.records if record.status == "open"]
+        if (
+            preview.current_conflict_count != 1
+            or len(open_records) != 1
+            or not open_records[0].snapshot_at
+        ):
+            return preview
+        snapshot_at = datetime.fromisoformat(open_records[0].snapshot_at)
+        if snapshot_at > native_started_at:
+            return preview
+        return replace(
+            preview,
+            current_merge_safe=True,
+            native_started_at=native_started_at.isoformat(),
+        )
+
+    @staticmethod
     def apply_import(
         preview: ImportPreview,
         state: LedgerState,
@@ -140,14 +166,32 @@ class CsvArchive:
         imported_at: str | None = None,
     ) -> set[int]:
         """Apply an already validated preview atomically in memory."""
-        if current_month_strategy not in {"keep_native", "replace_with_csv"}:
+        if current_month_strategy not in {
+            "keep_native",
+            "merge_non_overlapping",
+            "replace_with_csv",
+        }:
             raise ArchiveError("invalid_current_month_strategy")
+        if current_month_strategy == "merge_non_overlapping" and not (
+            preview.current_merge_safe and preview.native_started_at
+        ):
+            raise ArchiveError("current_month_merge_not_safe")
+        if current_month_strategy == "merge_non_overlapping":
+            open_records = [record for record in preview.records if record.status == "open"]
+            if (
+                len(open_records) != 1
+                or not open_records[0].snapshot_at
+                or datetime.fromisoformat(open_records[0].snapshot_at)
+                > datetime.fromisoformat(preview.native_started_at)
+            ):
+                raise ArchiveError("current_month_overlap_not_excluded")
         for incoming in preview.records:
             key = f"{incoming.year:04d}-{incoming.month:02d}"
             existing = state.months.get(key)
             if (
                 existing is not None
                 and not CsvArchive._records_equal(existing, incoming)
+                and not CsvArchive._already_merged(existing, incoming)
                 and not (existing.status == "open" and incoming.status == "open")
             ):
                 raise ArchiveError("import_changed_since_preview")
@@ -159,7 +203,9 @@ class CsvArchive:
                 state.months[key] = incoming
                 applied.append(incoming)
                 continue
-            if CsvArchive._records_equal(existing, incoming):
+            if CsvArchive._records_equal(existing, incoming) or CsvArchive._already_merged(
+                existing, incoming
+            ):
                 continue
             if existing.status != "open" or incoming.status != "open":
                 raise ArchiveError("import_changed_since_preview")
@@ -167,20 +213,47 @@ class CsvArchive:
                 continue
             state.import_backups.append(
                 {
-                    "replaced_at": imported_at,
+                    "changed_at": imported_at,
+                    "strategy": current_month_strategy,
                     "month_key": key,
                     "record": existing.to_dict(),
                 }
             )
             state.import_backups = state.import_backups[-10:]
-            state.months[key] = incoming
+            if current_month_strategy == "merge_non_overlapping":
+                state.months[key] = replace(
+                    incoming,
+                    measured_kwh=incoming.measured_kwh + existing.measured_kwh,
+                    reconstructed_kwh=(
+                        incoming.reconstructed_kwh + existing.reconstructed_kwh
+                    ),
+                    shadow_power_kwh=(
+                        incoming.shadow_power_kwh + existing.shadow_power_kwh
+                    ),
+                    covered_seconds=min(
+                        incoming.period_seconds,
+                        incoming.covered_seconds + existing.covered_seconds,
+                    ),
+                    unknown_seconds=(
+                        incoming.unknown_seconds + existing.unknown_seconds
+                    ),
+                    excluded_kwh=incoming.excluded_kwh + existing.excluded_kwh,
+                    tariff_per_kwh=existing.tariff_per_kwh,
+                    currency=existing.currency,
+                    origin="imported_merged",
+                    imported_snapshot_measured_kwh=incoming.measured_kwh,
+                    imported_snapshot_reconstructed_kwh=incoming.reconstructed_kwh,
+                )
+            else:
+                state.months[key] = incoming
             applied.append(incoming)
-            state.last_energy_kwh = None
-            state.last_energy_at = None
-            state.last_power_kw = None
-            state.last_power_at = None
-            state.energy_gap_active = False
-            state.energy_gap_started_at = None
+            if current_month_strategy == "replace_with_csv":
+                state.last_energy_kwh = None
+                state.last_energy_at = None
+                state.last_power_kw = None
+                state.last_power_at = None
+                state.energy_gap_active = False
+                state.energy_gap_started_at = None
         state.last_import_at = imported_at
         state.last_import_summary = (
             f"applied={len(applied)}, identical={preview.identical_count}, "
@@ -204,6 +277,27 @@ class CsvArchive:
             and abs(left.excluded_kwh - right.excluded_kwh) <= 0.001
             and abs(left.tariff_per_kwh - right.tariff_per_kwh) <= 0.000001
             and left.currency == right.currency
+        )
+
+    @staticmethod
+    def _already_merged(existing: MonthRecord, incoming: MonthRecord) -> bool:
+        """Return whether this exact imported snapshot is already in the ledger."""
+        return (
+            existing.status == "open"
+            and incoming.status == "open"
+            and existing.origin == "imported_merged"
+            and existing.snapshot_at == incoming.snapshot_at
+            and existing.imported_snapshot_measured_kwh is not None
+            and existing.imported_snapshot_reconstructed_kwh is not None
+            and abs(
+                existing.imported_snapshot_measured_kwh - incoming.measured_kwh
+            )
+            <= 0.001
+            and abs(
+                existing.imported_snapshot_reconstructed_kwh
+                - incoming.reconstructed_kwh
+            )
+            <= 0.001
         )
 
     @staticmethod
@@ -265,10 +359,14 @@ class CsvArchive:
             period_end = row["period_end"]
             period_start_dt = datetime.fromisoformat(period_start)
             period_end_dt = datetime.fromisoformat(period_end)
+            if period_start_dt.utcoffset() is None or period_end_dt.utcoffset() is None:
+                raise ArchiveError("timezone_required")
             if period_end_dt <= period_start_dt:
                 raise ArchiveError("invalid_period")
             if snapshot_at is not None:
                 snapshot_dt = datetime.fromisoformat(snapshot_at)
+                if snapshot_dt.utcoffset() is None:
+                    raise ArchiveError("timezone_required")
                 if not period_start_dt <= snapshot_dt <= period_end_dt:
                     raise ArchiveError("invalid_snapshot_at")
             record = MonthRecord(

@@ -22,7 +22,7 @@
       "settings": {"title": "Advanced settings", "data": {"notification_target": "Notification destination", "max_power_kw": "Maximum plausible power (kW)", "source_timeout_minutes": "Cumulative source timeout (minutes)", "report_hour": "Monthly report hour"}},
       "test_notification": {"title": "Test notification", "description": "Send a test through {target}.", "data": {"confirm": "Send test"}},
       "import_history": {"title": "Import CSV history", "description": "Choose a CSV from this device. Energy Report validates it completely before showing a preview or changing the ledger.", "data": {"csv_file": "CSV file"}},
-      "confirm_import": {"title": "Confirm history import", "description": "File: {filename}. Closed: {closed_count}; open: {open_count}; new: {new_count}; already identical: {identical_count}; current-month conflicts: {current_conflict_count}. Closed conflicts are never overwritten. If the open month conflicts, choose whether to keep native data or replace it with the CSV snapshot.", "data": {"confirm": "Import these records", "current_month_strategy": "Current month"}}
+      "confirm_import": {"title": "Confirm history import", "description": "File: {filename}. Closed: {closed_count}; open: {open_count}; new: {new_count}; already identical: {identical_count}; current-month conflicts: {current_conflict_count}; safe merge: {merge_status}. Closed conflicts are never overwritten. A merge is offered only when snapshot_at proves that CSV history ends before native collection began.", "data": {"confirm": "Import these records", "current_month_strategy": "Current month"}}
     },
     "error": {
       "notification_target_not_found": "Select an available notification entity.",
@@ -36,7 +36,7 @@
   },
   "selector": {
     "source_mode": {"options": {"energy": "Cumulative energy", "power": "Instantaneous power", "dual": "Energy with power verification"}},
-    "current_month_strategy": {"options": {"keep_native": "Keep data collected by Energy Report", "replace_with_csv": "Replace with the CSV snapshot"}}
+    "current_month_strategy": {"options": {"keep_native": "Keep data collected by Energy Report", "merge_non_overlapping": "Merge CSV history with later Energy Report data", "replace_with_csv": "Replace with the CSV snapshot"}}
   },
   "entity": {
     "sensor": {

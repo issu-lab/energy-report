@@ -95,6 +95,99 @@ class ArchiveAndReportTests(unittest.TestCase):
             self.assertEqual(len(runtime.import_backups), 1)
             self.assertIsNone(runtime.last_energy_kwh)
 
+    def test_safe_current_month_merge_adds_native_delta_and_keeps_baseline(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            incoming = models.new_month(datetime(2026, 8, 15, tzinfo=UTC), 0.24, "EUR")
+            incoming.measured_kwh = 143.8
+            incoming.covered_seconds = 14 * 86400
+            incoming.snapshot_at = "2026-08-15T12:00:00+00:00"
+            native = models.new_month(datetime(2026, 8, 20, tzinfo=UTC), 0.28, "EUR")
+            native.measured_kwh = 12.5
+            native.reconstructed_kwh = 0.5
+            native.covered_seconds = 4 * 86400
+            runtime = models.LedgerState(
+                months={"2026-08": native},
+                last_energy_kwh=900.0,
+                last_energy_at="2026-08-20T10:00:00+00:00",
+            )
+            preview = archive.ImportPreview(
+                path=writer.import_dir / "open.csv",
+                records=(incoming,),
+                closed_count=0,
+                open_count=1,
+                new_count=0,
+                identical_count=0,
+                current_conflict_count=1,
+                current_merge_safe=True,
+                native_started_at="2026-08-16T10:00:00+00:00",
+            )
+            writer.apply_import(
+                preview,
+                runtime,
+                "merge_non_overlapping",
+                "2026-08-20T12:00:00+00:00",
+            )
+            merged = runtime.months["2026-08"]
+            self.assertAlmostEqual(merged.total_kwh, 156.8)
+            self.assertEqual(merged.tariff_per_kwh, 0.28)
+            self.assertEqual(merged.origin, "imported_merged")
+            self.assertEqual(runtime.last_energy_kwh, 900.0)
+            self.assertEqual(len(runtime.import_backups), 1)
+            writer.apply_import(
+                preview,
+                runtime,
+                "merge_non_overlapping",
+                "2026-08-20T12:05:00+00:00",
+            )
+            self.assertAlmostEqual(runtime.months["2026-08"].total_kwh, 156.8)
+            self.assertEqual(len(runtime.import_backups), 1)
+
+    def test_current_month_merge_is_rejected_without_overlap_proof(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            incoming = models.new_month(datetime(2026, 8, 15, tzinfo=UTC), 0.24, "EUR")
+            incoming.snapshot_at = "2026-08-15T12:00:00+00:00"
+            native = models.new_month(datetime(2026, 8, 20, tzinfo=UTC), 0.24, "EUR")
+            preview = archive.ImportPreview(
+                path=writer.import_dir / "open.csv",
+                records=(incoming,),
+                closed_count=0,
+                open_count=1,
+                new_count=0,
+                identical_count=0,
+                current_conflict_count=1,
+            )
+            with self.assertRaisesRegex(archive.ArchiveError, "merge_not_safe"):
+                writer.apply_import(
+                    preview,
+                    models.LedgerState(months={"2026-08": native}),
+                    "merge_non_overlapping",
+                )
+
+    def test_merge_preview_requires_snapshot_before_native_start(self):
+        with TemporaryDirectory() as temporary:
+            writer = archive.CsvArchive(temporary, "casa")
+            incoming = models.new_month(datetime(2026, 8, 15, tzinfo=UTC), 0.24, "EUR")
+            incoming.snapshot_at = "2026-08-15T12:00:00+00:00"
+            preview = archive.ImportPreview(
+                path=writer.import_dir / "open.csv",
+                records=(incoming,),
+                closed_count=0,
+                open_count=1,
+                new_count=0,
+                identical_count=0,
+                current_conflict_count=1,
+            )
+            unsafe = writer.prepare_current_merge(
+                preview, datetime(2026, 8, 15, 11, 59, tzinfo=UTC)
+            )
+            safe = writer.prepare_current_merge(
+                preview, datetime(2026, 8, 15, 12, 1, tzinfo=UTC)
+            )
+            self.assertFalse(unsafe.current_merge_safe)
+            self.assertTrue(safe.current_merge_safe)
+
     def test_conflicting_closed_month_is_rejected(self):
         with TemporaryDirectory() as temporary:
             writer = archive.CsvArchive(temporary, "casa")

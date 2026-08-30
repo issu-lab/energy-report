@@ -2,6 +2,15 @@
 
 All notable changes to Energy Report are documented here.
 
+## 0.1.0-alpha.3 - 2026-08-30
+
+- Added a safe current-month merge for non-overlapping CSV and native data.
+- Prove non-overlap by comparing CSV `snapshot_at` with the config entry creation time.
+- Preserve current source baselines during merge so post-import consumption continues without a gap.
+- Keep a bounded Store backup of the native open record before merging.
+- Reject merge requests when the CSV lacks a timezone-aware snapshot or overlap cannot be excluded.
+- Added merge eligibility and accounting tests plus clearer English/Italian preview guidance.
+
 ## 0.1.0-alpha.2 - 2026-08-30
 
 - Replaced typed CSV server paths with Home Assistant's native file upload selector.

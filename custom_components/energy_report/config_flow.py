@@ -354,10 +354,20 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
             return self.async_create_entry(title="", data=self.config_entry.options)
         fields: dict[Any, Any] = {vol.Required("confirm", default=False): bool}
         if self._preview.current_conflict_count:
-            fields[vol.Required("current_month_strategy", default="keep_native")] = (
+            strategies = ["keep_native", "replace_with_csv"]
+            default_strategy = "keep_native"
+            if self._preview.current_merge_safe:
+                strategies.insert(1, "merge_non_overlapping")
+                default_strategy = "merge_non_overlapping"
+            fields[
+                vol.Required(
+                    "current_month_strategy",
+                    default=default_strategy,
+                )
+            ] = (
                 selector.SelectSelector(
                     selector.SelectSelectorConfig(
-                        options=["keep_native", "replace_with_csv"],
+                        options=strategies,
                         translation_key="current_month_strategy",
                     )
                 )
@@ -372,5 +382,10 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
                 "new_count": str(self._preview.new_count),
                 "identical_count": str(self._preview.identical_count),
                 "current_conflict_count": str(self._preview.current_conflict_count),
+                "merge_status": (
+                    ("disponibile" if self._preview.current_merge_safe else "non disponibile")
+                    if self.hass.config.language.lower().startswith("it")
+                    else ("available" if self._preview.current_merge_safe else "unavailable")
+                ),
             },
         )

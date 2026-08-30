@@ -39,6 +39,7 @@ The internal ledger, not the device lifetime counter, is authoritative for month
 - Identical imported months are idempotently ignored.
 - Conflicting closed months reject the complete import and are never overwritten.
 - Replacing a conflicting open month requires an explicit user choice, preserves a Store backup and resets source baselines.
+- A current-month merge is available only when `snapshot_at <= config_entry.created_at`; it adds the imported balance to later native accounting and preserves active source baselines.
 - Persistent state is versioned; archive schema is independently versioned.
 
 ## Storage
