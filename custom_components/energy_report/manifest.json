@@ -1,7 +1,7 @@
 {
   "domain": "energy_report",
   "name": "Energy Report",
-  "after_dependencies": ["sensor"],
+  "after_dependencies": ["file_upload", "sensor"],
   "codeowners": ["@issu-lab"],
   "config_flow": true,
   "documentation": "https://github.com/issu-lab/energy-report",
