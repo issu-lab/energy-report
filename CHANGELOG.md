@@ -2,6 +2,11 @@
 
 All notable changes to Energy Report are documented here.
 
+## 0.1.2 - 2026-08-31
+
+- Republished the 0.1.1 application patch under a fresh immutable tag after GitHub codeload returned HTTP 400 for the original `v0.1.1` tag.
+- Included the HACS-safe absolute README footer URL already present on `main`.
+
 ## 0.1.1 - 2026-08-30
 
 - Declared the integration config-entry-only after adding the authenticated export endpoint, clearing the corresponding Hassfest warning.

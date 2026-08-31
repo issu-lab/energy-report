@@ -24,7 +24,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ❌ Not yet |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.1` |
+| **Current version** | `0.1.2` |
 | **Minimum Home Assistant** | 2026.8.0 |
 | **Local tests** | ✅ 31 tests |
 | **Cumulative-energy validation** | ❌ Not yet |
@@ -32,7 +32,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Dual-source validation** | ❌ Not yet |
 
 > [!WARNING]
-> Version 0.1.1 is a beta release running in the Lodi homelab. Its accounting, import and export logic have dependency-free unit coverage, but the integration has not yet completed a live month-boundary validation.
+> Version 0.1.2 is a beta release running in the Lodi homelab. Its accounting, import and export logic have dependency-free unit coverage, but the integration has not yet completed a live month-boundary validation.
 
 > [!IMPORTANT]
 > Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
@@ -83,7 +83,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.1.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.2.
 
 ---
 
@@ -369,7 +369,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.1.
+- Instances are independent and cannot be aggregated by Energy Report 0.1.2.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 
