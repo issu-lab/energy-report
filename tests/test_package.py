@@ -54,7 +54,7 @@ class PackageTests(unittest.TestCase):
         self.assertIn("## Why It Exists", readme)
         self.assertIn("## Known Limitations", readme)
         self.assertIn(
-            '<img src="assets/issu-open-homelab-badge.png"',
+            '<img src="https://raw.githubusercontent.com/issu-lab/energy-report/main/assets/issu-open-homelab-badge.png"',
             readme,
         )
         self.assertNotIn("energy-report-footer", readme)
@@ -67,7 +67,7 @@ class PackageTests(unittest.TestCase):
             )
         )
         self.assertIn(
-            '<img src="assets/issu-open-homelab-badge.png"',
+            '<img src="https://raw.githubusercontent.com/issu-lab/energy-report/main/assets/issu-open-homelab-badge.png"',
             readme,
         )
         self.assertIn(
@@ -75,10 +75,7 @@ class PackageTests(unittest.TestCase):
             readme,
         )
         local_html_images = re.findall(r'<img\s+src="assets/[^\"]+"', readme)
-        self.assertEqual(
-            local_html_images,
-            ['<img src="assets/issu-open-homelab-badge.png"'],
-        )
+        self.assertEqual(local_html_images, [])
         self.assertIn('width="480"', readme)
         self.assertNotIn("<picture>", readme)
 

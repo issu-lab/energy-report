@@ -386,7 +386,7 @@ Released under the [MIT License](https://github.com/issu-lab/energy-report/blob/
 This project is part of the **iSSU Open Homelab ecosystem**.
 
 <a href="https://github.com/issu-lab/Open-Homelab">
-  <img src="assets/issu-open-homelab-badge.png"
+  <img src="https://raw.githubusercontent.com/issu-lab/energy-report/main/assets/issu-open-homelab-badge.png"
        alt="Explore iSSU Open Homelab"
        width="480">
 </a>
