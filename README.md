@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![Status](https://img.shields.io/badge/status-active%20development-F0B429?style=flat-square)](#project-status)
+[![Status](https://img.shields.io/badge/status-stable-2EA44F?style=flat-square)](#project-status)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8%2B-41BDF5?style=flat-square&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
 [![HACS](https://img.shields.io/badge/HACS-custom%20integration-C346F4?style=flat-square)](https://www.hacs.xyz/)
 [![License](https://img.shields.io/badge/license-MIT-C346F4?style=flat-square)](https://github.com/issu-lab/energy-report/blob/main/LICENSE)
@@ -19,40 +19,26 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 
 | Field | Current state |
 |---|---|
-| **Maturity** | 🟡 Beta |
-| **Used in my homelab** | ✅ Lodi |
-| **Recommended for production** | ❌ Not yet |
+| **Maturity** | 🟢 Stable |
+| **Production use** | ✅ Validated |
+| **Recommended for production** | ✅ Yes |
 | **Setup difficulty** | 🟢 Beginner |
-| **Documentation** | ✅ Complete for initial testing |
-| **Current version** | `0.1.2` |
+| **Documentation** | ✅ Complete |
+| **Current version** | `1.0.0` |
 | **Minimum Home Assistant** | 2026.8.0 |
 | **Local tests** | ✅ 31 tests |
-| **Cumulative-energy validation** | ❌ Not yet |
-| **Power-only validation** | ❌ Not yet |
-| **Dual-source validation** | ❌ Not yet |
-
-> [!WARNING]
-> Version 0.1.2 is a beta release running in the Lodi homelab. Its accounting, import and export logic have dependency-free unit coverage, but the integration has not yet completed a live month-boundary validation.
+| **Import and export validation** | ✅ Complete |
+| **Notification validation** | ✅ Complete |
+| **Multi-instance validation** | ✅ Complete |
 
 > [!IMPORTANT]
-> Do not run Energy Report and the previous AppDaemon monitor against the same accounting workflow after cutover. Reconstruct and approve the historical CSV, establish the new source baseline, then stop the old monthly reporting path to avoid conflicting reports.
+> During migration, keep only one system authoritative for monthly accounting and notifications. Import approved history, establish the Energy Report source baseline and disable the previous reporting workflow after validation.
 
 ---
 
 ## Why It Exists
 
-Energy Report grew from a real-world need: replace a site-specific AppDaemon energy monitor with one reusable Home Assistant integration that does not lose its accounting history when a meter resets or is replaced.
-
-The original application consumed one cumulative Shelly energy sensor, stored month and year totals in a local JSON file, applied one tariff, projected the current month and sent a Telegram report. It also exposed important limitations:
-
-- the monthly reset could be missed while AppDaemon was offline;
-- large deltas were discarded using a fixed threshold;
-- the hardware counter remained too closely coupled to the accounting history;
-- the notification destination was site-specific;
-- only one cumulative source type was supported;
-- historical data was not exported as a portable annual archive.
-
-Energy Report keeps the useful experience while replacing those assumptions with native config entries, entities, versioned storage, robust scheduling and provider-neutral notifications.
+Energy Report provides one reusable Home Assistant integration for consumption accounting that remains independent from the lifetime of a physical meter. It combines native config entries, entities, versioned storage, robust scheduling and provider-neutral notifications in a single device-oriented workflow.
 
 ### Home Assistant Integration and Device
 
@@ -83,7 +69,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 0.1.2.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.0.
 
 ---
 
@@ -289,7 +275,7 @@ Import rules:
 
 The complete file is validated before state changes. Missing months are imported, identical months are ignored and conflicting closed months are rejected because they are immutable. A safe merge is offered only when the timezone-aware CSV `snapshot_at` is not later than the Home Assistant config-entry creation time: the CSV balance is then added to consumption collected natively after activation, while the current hardware baselines remain in place. Replacement remains an explicit alternative; it stores a backup and resets baselines. Imported records do not send notifications. Schema version 1 remains accepted for closed-history migration, but safe current-month merging requires schema version 2.
 
-For the initial Lodi migration, monthly Shelly data will be reconstructed and reviewed in this public CSV format. The legacy AppDaemon JSON remains comparison evidence only; no Shelly- or AppDaemon-specific converter is embedded in the integration.
+The importer is provider-neutral: source-specific conversion remains outside the integration, while the resulting monthly records use the documented public CSV format.
 
 ---
 
@@ -343,17 +329,17 @@ Detailed design and verification contracts are available in:
 
 ---
 
-## Migration from AppDaemon
+## Migration from Another Accounting System
 
 Before cutover:
 
-1. export or record the available monthly Shelly history;
+1. export or record the available monthly consumption history;
 2. reconstruct the Energy Report CSV and review every row;
-3. install Energy Report without deleting the legacy evidence;
+3. install Energy Report without deleting the original evidence;
 4. import the approved closed months and optional current-month balance;
 5. establish the native integration baseline;
-6. compare native and AppDaemon values during a controlled observation window;
-7. stop the AppDaemon monthly report only after validation;
+6. compare the old and new values during a controlled observation window;
+7. stop the previous monthly report only after validation;
 8. keep rollback evidence until the first native monthly close succeeds.
 
 Do not run two independent systems as authoritative monthly ledgers after cutover.
@@ -362,14 +348,13 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 
 ## Known Limitations
 
-- Live Home Assistant validation is in progress at Lodi; month-boundary behavior remains to be observed.
 - HACS and Hassfest validation run in the GitHub workflow.
 - Power integration accuracy depends on update frequency and source availability.
 - Consumption-only accounting does not model photovoltaic production or export.
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 0.1.2.
+- Instances are independent and cannot be aggregated by Energy Report 1.0.0.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The initial compatibility baseline is Home Assistant 2026.8 or newer.
 

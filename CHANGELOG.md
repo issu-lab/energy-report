@@ -2,6 +2,13 @@
 
 All notable changes to Energy Report are documented here.
 
+## 1.0.0 - 2026-09-02
+
+- Promoted Energy Report to the first stable production release.
+- Validated notification delivery together with per-instance CSV import and export workflows.
+- Reworked public documentation to be fully reusable and provider-neutral.
+- Removed deployment-specific migration history and personal environment references.
+
 ## 0.1.2 - 2026-08-31
 
 - Republished the 0.1.1 application patch under a fresh immutable tag after GitHub codeload returned HTTP 400 for the original `v0.1.1` tag.

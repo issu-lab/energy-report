@@ -33,7 +33,7 @@ Version 0.1 is acceptable only when all applicable checks pass.
 - Current-month merge is offered only with proof of non-overlap and preserves the active source baseline.
 - At most one open current-month record can be imported.
 - Imported data does not send notifications.
-- The public importer contains no AppDaemon- or Shelly-specific code.
+- The public importer contains no hardware- or source-platform-specific conversion code.
 
 ## Home Assistant and delivery
 
