@@ -2,6 +2,7 @@
   "domain": "energy_report",
   "name": "Energy Report",
   "after_dependencies": ["file_upload", "sensor"],
+  "categories": ["energy"],
   "codeowners": ["@issu-lab"],
   "config_flow": true,
   "documentation": "https://github.com/issu-lab/energy-report",
@@ -9,5 +10,5 @@
   "iot_class": "calculated",
   "issue_tracker": "https://github.com/issu-lab/energy-report/issues",
   "requirements": [],
-  "version": "1.0.0"
+  "version": "1.0.1"
 }

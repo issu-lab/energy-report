@@ -30,6 +30,7 @@ class PackageTests(unittest.TestCase):
         hacs = json.loads((ROOT / "hacs.json").read_text())
         self.assertEqual(manifest["domain"], "energy_report")
         self.assertEqual(manifest["version"], version)
+        self.assertEqual(manifest["categories"], ["energy"])
         self.assertEqual(manifest["integration_type"], "device")
         self.assertTrue(manifest["config_flow"])
         self.assertEqual(hacs["homeassistant"], "2026.8.0")
@@ -93,17 +94,19 @@ class PackageTests(unittest.TestCase):
         ):
             self.assertNotIn(italian_label, readme)
 
-    def test_readme_has_my_home_assistant_hacs_button(self):
+    def test_readme_has_marketplace_installation_and_hacs_compatibility(self):
         readme = (ROOT / "README.md").read_text()
         self.assertIn(
-            "https://my.home-assistant.io/badges/hacs_repository.svg",
+            "https://my.home-assistant.io/badges/marketplace_repository.svg",
             readme,
         )
         self.assertIn(
-            "https://my.home-assistant.io/redirect/hacs_repository/"
+            "https://my.home-assistant.io/redirect/marketplace_repository/"
             "?owner=issu-lab&repository=energy-report&category=integration",
             readme,
         )
+        self.assertIn("Home Assistant 2026.11", readme)
+        self.assertIn("For Home Assistant 2026.8 through 2026.10, use HACS", readme)
 
     def test_visual_asset_dimensions(self):
         assets = ROOT / "assets"

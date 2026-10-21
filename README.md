@@ -4,7 +4,7 @@
 
 [![Status](https://img.shields.io/badge/status-stable-2EA44F?style=flat-square)](#project-status)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2026.8%2B-41BDF5?style=flat-square&logo=homeassistant&logoColor=white)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-custom%20integration-C346F4?style=flat-square)](https://www.hacs.xyz/)
+[![Marketplace](https://img.shields.io/badge/Home%20Assistant-Marketplace-41BDF5?style=flat-square&logo=homeassistant&logoColor=white)](#installation-with-marketplace-or-hacs)
 [![License](https://img.shields.io/badge/license-MIT-C346F4?style=flat-square)](https://github.com/issu-lab/energy-report/blob/main/LICENSE)
 
 **Native Home Assistant consumption accounting and monthly cost reports.**
@@ -24,7 +24,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ✅ Yes |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete |
-| **Current version** | `1.0.0` |
+| **Current version** | `1.0.1` |
 | **Minimum Home Assistant** | 2026.8.0 |
 | **Local tests** | ✅ 31 tests |
 | **Import and export validation** | ✅ Complete |
@@ -42,7 +42,7 @@ Energy Report provides one reusable Home Assistant integration for consumption a
 
 ### Home Assistant Integration and Device
 
-Energy Report is installed and managed as a HACS custom integration. Each configured consumption ledger is represented as one Home Assistant device that groups its energy, cost, forecast, tariff, diagnostic and report entities. It therefore appears with regular integrations instead of dispersing its configuration among Home Assistant Helpers or YAML files.
+Energy Report is installed and managed through the Home Assistant Marketplace on Home Assistant 2026.11 or newer, or through HACS on earlier compatible releases. Each configured consumption ledger is represented as one Home Assistant device that groups its energy, cost, forecast, tariff, diagnostic and report entities. It therefore appears with regular integrations instead of dispersing its configuration among Home Assistant Helpers or YAML files.
 
 The integration consumes existing Home Assistant sensor entities. It does not communicate directly with Shelly hardware, MQTT brokers, cloud APIs or electricity providers.
 
@@ -67,23 +67,25 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 📥 Native CSV upload with transactional preview and explicit conflict handling.
 - 🩺 Native diagnostics with measured, reconstructed and incomplete data quality.
 - 🌍 English and Italian UI translations.
-- 📦 HACS-ready repository layout.
+- 📦 Marketplace- and HACS-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.0.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.1.
 
 ---
 
-## Installation with HACS
+## Installation with Marketplace or HACS
 
-Energy Report is prepared as a custom HACS repository:
+On Home Assistant 2026.11 or newer, Energy Report is installed through the built-in Marketplace:
 
 <div align="center">
 
-[![Open your Home Assistant instance and open Energy Report inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=issu-lab&repository=energy-report&category=integration)
+[![Open your Home Assistant instance and open Energy Report in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=issu-lab&repository=energy-report&category=integration)
 
 </div>
 
-The button opens Energy Report directly as a custom integration repository in HACS. Alternatively, add it manually:
+The button opens Energy Report as an integration repository in the Marketplace. If it is not yet present in the catalog, Home Assistant offers to add it as a custom repository.
+
+For Home Assistant 2026.8 through 2026.10, use HACS instead:
 
 1. Open **HACS** in Home Assistant.
 2. Open the top-right menu and select **Custom repositories**.
@@ -94,7 +96,9 @@ The button opens Energy Report directly as a custom integration repository in HA
 7. Open **Settings → Devices & services → Add integration**.
 8. Search for **Energy Report**.
 
-Energy Report uses numeric versions without GitHub pre-release suffixes: `0.0.x` identifies alpha development, `0.x` beta development and `1.x` stable releases. HACS therefore follows regular version tags without requiring its pre-release switch.
+Home Assistant 2026.11 migrates installed and custom HACS repositories to the Marketplace. The repository layout, `hacs.json` metadata and HACS validation action remain the compatibility contract used by both installers.
+
+Energy Report uses numeric versions without GitHub pre-release suffixes: `0.0.x` identifies alpha development, `0.x` beta development and `1.x` stable releases. Marketplace and HACS therefore follow regular version tags without requiring their pre-release switch.
 
 For local validation before publication, copy `custom_components/energy_report` into the Home Assistant `custom_components` directory and restart Home Assistant.
 
@@ -320,7 +324,7 @@ source/build-assets.sh
 
 The canonical iSSU footer and integration icons are reused unchanged from the other iSSU repositories and are deliberately not reconstructed by that script.
 
-The GitHub workflow also runs HACS validation and Hassfest.
+The GitHub workflow also runs the HACS repository validation used by Marketplace and Hassfest.
 
 Detailed design and verification contracts are available in:
 
@@ -348,15 +352,15 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 
 ## Known Limitations
 
-- HACS and Hassfest validation run in the GitHub workflow.
+- Marketplace/HACS repository validation and Hassfest run in the GitHub workflow.
 - Power integration accuracy depends on update frequency and source availability.
 - Consumption-only accounting does not model photovoltaic production or export.
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are intentionally immutable.
-- Instances are independent and cannot be aggregated by Energy Report 1.0.0.
+- Instances are independent and cannot be aggregated by Energy Report 1.0.1.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
-- The initial compatibility baseline is Home Assistant 2026.8 or newer.
+- The integration compatibility baseline remains Home Assistant 2026.8 or newer; the built-in Marketplace requires Home Assistant 2026.11 or newer.
 
 ---
 

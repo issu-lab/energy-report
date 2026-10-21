@@ -1,6 +1,6 @@
 # Acceptance criteria
 
-Version 0.1 is acceptable only when all applicable checks pass.
+The current release is acceptable only when all applicable checks pass.
 
 ## Accounting
 
@@ -49,6 +49,8 @@ Version 0.1 is acceptable only when all applicable checks pass.
 ## Package
 
 - Manifest, VERSION and HACS metadata agree.
+- The manifest declares the official `energy` integration category used by Marketplace discovery.
+- The README documents the Home Assistant 2026.11 Marketplace path and the Home Assistant 2026.8-2026.10 HACS compatibility path.
 - English and Italian translation key shapes agree.
 - Python compilation and unit tests pass.
 - Banner and 1280 x 640 social preview are reproducible; footer and brand icons reuse the canonical iSSU repository assets unchanged.
