@@ -40,6 +40,19 @@ class PackageTests(unittest.TestCase):
         italian = json.loads((INTEGRATION / "translations" / "it.json").read_text())
         self.assertEqual(key_shape(english), key_shape(italian))
 
+    def test_native_anomaly_repairs_are_packaged(self):
+        repairs = (INTEGRATION / "repairs.py").read_text()
+        strings = json.loads((INTEGRATION / "strings.json").read_text())
+        self.assertIn("async_create_fix_flow", repairs)
+        self.assertIn("consumption_anomaly", strings["issues"])
+        self.assertIn("legacy_consumption_anomaly", strings["issues"])
+        self.assertNotIn("description", strings["issues"]["consumption_anomaly"])
+        self.assertIn("fix_flow", strings["issues"]["consumption_anomaly"])
+        self.assertEqual(
+            strings["entity"]["sensor"]["pending_anomalies"]["name"],
+            "Anomalies to review",
+        )
+
     def test_no_site_specific_entities_or_recipients(self):
         source = "\n".join(path.read_text() for path in INTEGRATION.glob("*.py"))
         for forbidden in ("shellyem_244cab", "6358993249", "notify.telegram", "sensor.shelly"):

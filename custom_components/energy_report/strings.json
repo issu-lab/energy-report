@@ -160,6 +160,40 @@
             }
         }
     },
+    "issues": {
+        "consumption_anomaly": {
+            "title": "Review {excluded} kWh excluded for {instance}",
+            "fix_flow": {
+                "step": {
+                    "init": {
+                        "title": "Review consumption anomaly",
+                        "description": "Energy Report observed the cumulative source `{source}` change from {previous} to {new} kWh at {detected_at}, over {interval} minutes. The increment was {excluded} kWh, while the configured plausibility limit was {limit} kWh. It was excluded as a precaution. Estimated impact: {cost} {currency}.\n\nChoose whether to include the increment as valid consumption or confirm that it must remain excluded.",
+                        "data": {"decision": "Accounting decision"}
+                    }
+                },
+                "abort": {
+                    "anomaly_already_resolved": "This anomaly has already been reviewed.",
+                    "instance_unavailable": "The Energy Report instance is not currently available. Reload it and try again."
+                }
+            }
+        },
+        "legacy_consumption_anomaly": {
+            "title": "Review previous exclusion of {excluded} kWh for {instance}",
+            "fix_flow": {
+                "step": {
+                    "init": {
+                        "title": "Review previous exclusion",
+                        "description": "This is a legacy aggregate for {month}: {excluded} kWh, with an estimated impact of {cost} {currency}. The earlier version stored only the excluded total, so the original timestamp, readings, interval and plausibility limit are not available. Energy Report has not fabricated those details.\n\nChoose whether to include the aggregate as valid consumption or confirm that it must remain excluded.",
+                        "data": {"decision": "Accounting decision"}
+                    }
+                },
+                "abort": {
+                    "anomaly_already_resolved": "This anomaly has already been reviewed.",
+                    "instance_unavailable": "The Energy Report instance is not currently available. Reload it and try again."
+                }
+            }
+        }
+    },
     "entity": {
         "sensor": {
             "current_month_energy": {
@@ -185,6 +219,9 @@
             },
             "previous_month_cost": {
                 "name": "Previous month cost"
+            },
+            "pending_anomalies": {
+                "name": "Anomalies to review"
             },
             "diagnostics": {
                 "name": "Diagnostics"

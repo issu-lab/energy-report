@@ -2,6 +2,13 @@
 
 All notable changes to Energy Report are documented here.
 
+## 1.0.2 - 2026-11-21
+
+- Added native Home Assistant Repairs for detailed and legacy consumption anomalies.
+- Added a direct fix flow with clear evidence and explicit accept-or-exclude decisions.
+- Added an enabled per-instance sensor that exposes the number and summary of pending anomalies.
+- Kept the options-based review as a secondary path while preserving idempotency, provenance and backups.
+
 ## 1.0.1 - 2026-11-21
 
 - Declared the official `energy` integration category for Home Assistant Marketplace discovery.

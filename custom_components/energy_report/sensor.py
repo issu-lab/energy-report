@@ -113,6 +113,7 @@ async def async_setup_entry(
         EnergyReportSensor(controller, entry, description) for description in SENSORS
     ]
     entities.append(EnergyReportDiagnosticSensor(controller, entry))
+    entities.append(EnergyReportPendingAnomaliesSensor(controller, entry))
     async_add_entities(entities)
 
 
@@ -150,4 +151,33 @@ class EnergyReportDiagnosticSensor(EnergyReportEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         return self.controller.diagnostic_attributes
+
+
+class EnergyReportPendingAnomaliesSensor(EnergyReportEntity, SensorEntity):
+    """Expose the actionable anomaly count on the integration device."""
+
+    _attr_translation_key = "pending_anomalies"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:alert-circle-outline"
+
+    def __init__(self, controller, entry) -> None:
+        super().__init__(controller, entry, "pending_anomalies")
+
+    @property
+    def native_value(self) -> int:
+        return self.controller.state.pending_anomaly_count
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        pending = self.controller.pending_anomaly_reviews()
+        if not pending:
+            return {"status": "clear"}
+        item = pending[0]
+        return {
+            "status": "review_required",
+            "month": item["month_key"],
+            "excluded_kwh": round(item["excluded_kwh"], 6),
+            "estimated_cost": round(item["impact_cost"], 2),
+            "details_available": item["details_available"],
+        }
 

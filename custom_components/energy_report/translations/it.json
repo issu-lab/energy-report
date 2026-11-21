@@ -155,6 +155,22 @@
             }
         }
     },
+    "issues": {
+        "consumption_anomaly": {
+            "title": "Revisiona {excluded} kWh esclusi per {instance}",
+            "fix_flow": {
+                "step": {"init": {"title": "Revisiona anomalia di consumo", "description": "Energy Report ha rilevato che la sorgente cumulativa `{source}` è passata da {previous} a {new} kWh alle {detected_at}, in {interval} minuti. L'incremento è stato di {excluded} kWh, mentre il limite di plausibilità configurato era {limit} kWh. Per precauzione è stato escluso. Impatto stimato: {cost} {currency}.\n\nScegli se includere l'incremento come consumo valido oppure confermare che debba rimanere escluso.", "data": {"decision": "Decisione contabile"}}},
+                "abort": {"anomaly_already_resolved": "Questa anomalia è già stata revisionata.", "instance_unavailable": "L'istanza Energy Report non è attualmente disponibile. Ricaricala e riprova."}
+            }
+        },
+        "legacy_consumption_anomaly": {
+            "title": "Revisiona una precedente esclusione di {excluded} kWh per {instance}",
+            "fix_flow": {
+                "step": {"init": {"title": "Revisiona esclusione precedente", "description": "Questo è un aggregato storico di {month}: {excluded} kWh, con un impatto stimato di {cost} {currency}. La versione precedente conservava soltanto il totale escluso, quindi orario, letture, intervallo e limite di plausibilità originali non sono disponibili. Energy Report non ha inventato questi dettagli.\n\nScegli se includere l'aggregato come consumo valido oppure confermare che debba rimanere escluso.", "data": {"decision": "Decisione contabile"}}},
+                "abort": {"anomaly_already_resolved": "Questa anomalia è già stata revisionata.", "instance_unavailable": "L'istanza Energy Report non è attualmente disponibile. Ricaricala e riprova."}
+            }
+        }
+    },
     "entity": {
         "sensor": {
             "current_month_energy": {
@@ -180,6 +196,9 @@
             },
             "previous_month_cost": {
                 "name": "Costo mese precedente"
+            },
+            "pending_anomalies": {
+                "name": "Anomalie da revisionare"
             },
             "diagnostics": {
                 "name": "Diagnostica"

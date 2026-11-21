@@ -66,3 +66,4 @@ ARCHIVE_FIELDS = (
 ARCHIVE_FIELDS_V1 = tuple(field for field in ARCHIVE_FIELDS if field != "snapshot_at")
 
 EVENT_REPORT_GENERATED = "energy_report_report_generated"
+ANOMALY_ISSUE_PREFIX = "consumption_anomaly_"

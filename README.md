@@ -24,7 +24,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ✅ Yes |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete |
-| **Current version** | `1.0.1` |
+| **Current version** | `1.0.2` |
 | **Minimum Home Assistant** | 2026.11.0 |
 | **Local tests** | ✅ 35 tests |
 | **Import and export validation** | ✅ Complete |
@@ -70,7 +70,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 Home Assistant Marketplace-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.1.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.2.
 
 ---
 
@@ -157,7 +157,9 @@ When the source decreases, Energy Report treats the change as a meter reset:
 
 A positive jump is evaluated against elapsed time and maximum plausible power. An implausible increment is excluded and diagnosed instead of being silently accepted or hidden behind a fixed kWh threshold.
 
-Each new exclusion records its timestamp, source, readings, interval, plausibility limit, energy and cost impact. **Settings → Review consumption anomalies** then offers two explicit decisions: include the increment as valid consumption, or confirm its exclusion after review. Decisions are idempotent, retain provenance and create a bounded pre-change backup. Older ledgers that only contain an aggregate excluded value remain reviewable, but Energy Report labels them as legacy aggregates and does not invent missing event details.
+Each new exclusion records its timestamp, source, readings, interval, plausibility limit, energy and cost impact. Energy Report immediately creates a native Home Assistant Repair linked to the affected config entry. Selecting **Fix** explains the evidence and offers two explicit decisions: include the increment as valid consumption, or confirm its exclusion after review. The device also exposes an enabled **Anomalies to review** sensor with the pending count and a concise summary. The advanced options flow remains available as a secondary path.
+
+Decisions are idempotent, retain provenance and create a bounded pre-change backup. Older ledgers that only contain an aggregate excluded value produce a transparent legacy Repair: the aggregate remains reviewable, but Energy Report does not invent missing timestamps, readings or plausibility limits.
 
 ---
 
@@ -353,7 +355,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are immutable during automatic accounting and CSV import. An explicit, backed-up anomaly review is the only audited correction path.
-- Instances are independent and cannot be aggregated by Energy Report 1.0.1.
+- Instances are independent and cannot be aggregated by Energy Report 1.0.2.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The integration compatibility baseline is Home Assistant 2026.11 or newer.
 

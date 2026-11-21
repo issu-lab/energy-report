@@ -13,6 +13,7 @@ from homeassistant.components.file_upload import process_uploaded_file
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT
 from homeassistant.core import Event, HomeAssistant, State, callback
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.event import (
     async_track_state_change_event,
     async_track_time_change,
@@ -23,6 +24,7 @@ from homeassistant.util import dt as dt_util
 
 from .archive import CsvArchive, ImportPreview
 from .const import (
+    ANOMALY_ISSUE_PREFIX,
     CONF_ENERGY_SENSOR,
     CONF_INSTANCE_ID,
     CONF_NAME,
@@ -212,6 +214,7 @@ class EnergyReportController:
         )
         await self._async_close_overdue_months()
         await self._async_save()
+        self._sync_anomaly_issue()
 
     async def async_shutdown(self) -> None:
         self._shutdown = True
@@ -529,6 +532,7 @@ class EnergyReportController:
         await self._async_save()
         for year in years:
             await self.hass.async_add_executor_job(self.archive.write_year, self.state, year)
+        self._sync_anomaly_issue()
         self._publish()
 
     def pending_anomaly_reviews(self) -> list[dict[str, Any]]:
@@ -592,6 +596,7 @@ class EnergyReportController:
             self.state,
             int(key[:4]),
         )
+        self._sync_anomaly_issue()
         self._publish()
 
     async def async_export_year(self, year: int) -> Path:
@@ -605,7 +610,52 @@ class EnergyReportController:
 
     async def _async_save_and_publish(self) -> None:
         await self._async_save()
+        self._sync_anomaly_issue()
         self._publish()
+
+    def _sync_anomaly_issue(self) -> None:
+        """Create, update or clear the native repair for this config entry."""
+        issue_id = f"{ANOMALY_ISSUE_PREFIX}{self.entry.entry_id}"
+        pending = self.pending_anomaly_reviews()
+        if not pending:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        item = pending[0]
+        placeholders = {
+            "instance": self.name,
+            "month": item["month_key"],
+            "excluded": f"{item['excluded_kwh']:.6f}",
+            "cost": f"{item['impact_cost']:.2f}",
+            "currency": item["currency"],
+            "pending_count": str(len(pending)),
+        }
+        if item["details_available"]:
+            placeholders.update(
+                {
+                    "detected_at": str(item["detected_at"]),
+                    "source": str(item["source"]),
+                    "previous": f"{item['previous_value_kwh']:.6f}",
+                    "new": f"{item['new_value_kwh']:.6f}",
+                    "interval": f"{item['interval_minutes']:.2f}",
+                    "limit": f"{item['plausible_limit_kwh']:.6f}",
+                }
+            )
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            config_entry_id=self.entry.entry_id,
+            data={"entry_id": self.entry.entry_id, "target": item["target"]},
+            is_fixable=True,
+            is_persistent=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=(
+                "consumption_anomaly"
+                if item["details_available"]
+                else "legacy_consumption_anomaly"
+            ),
+            translation_placeholders=placeholders,
+        )
 
     async def _async_save(self) -> None:
         await self.store.async_save(self.state.to_dict())
