@@ -1,6 +1,199 @@
 {
-  "config": {"step": {"user": {"title": "Crea Energy Report", "data": {"name": "Nome", "source_mode": "Modalità sorgente"}}, "sources": {"title": "Sorgenti di consumo", "data": {"energy_sensor": "Sensore energia cumulativa", "power_sensor": "Sensore potenza istantanea"}}, "reporting": {"title": "Costo e report", "description": "Scegli una singola entità di notifica. Sono supportati anche i gruppi di notifica.", "data": {"tariff": "Tariffa per kWh", "notification_target": "Destinazione notifiche"}}, "test_notification": {"title": "Notifica di prova", "data": {"send_test": "Invia notifica di prova"}}, "reconfigure": {"title": "Sostituisci sorgenti", "data": {"source_mode": "Modalità sorgente", "energy_sensor": "Sensore energia cumulativa", "power_sensor": "Sensore potenza istantanea"}}}, "error": {"invalid_energy_sensor": "Seleziona un sensore energia compatibile.", "invalid_power_sensor": "Seleziona un sensore potenza compatibile.", "notification_target_not_found": "Seleziona un'entità di notifica disponibile.", "notification_test_failed": "La notifica di prova non è riuscita."}, "abort": {"already_configured": "Esiste già un'istanza con questo nome."}},
-  "options": {"step": {"init": {"title": "Opzioni Energy Report", "menu_options": {"settings": "Impostazioni", "test_notification": "Notifica di prova", "import_history": "Importa storico CSV", "export_history": "Esporta storico CSV"}}, "settings": {"title": "Impostazioni avanzate", "data": {"notification_target": "Destinazione notifiche", "max_power_kw": "Potenza massima plausibile (kW)", "source_timeout_minutes": "Timeout sorgente (minuti)", "report_hour": "Ora del report mensile"}}, "test_notification": {"title": "Notifica di prova", "description": "Invia una prova tramite {target}.", "data": {"confirm": "Invia prova"}}, "import_history": {"title": "Importa storico CSV", "description": "Istanza di destinazione: {instance_name} ({instance_id}). Scegli un CSV da questo dispositivo. Dopo la conferma cambia soltanto questa istanza.", "data": {"csv_file": "File CSV"}}, "confirm_import": {"title": "Conferma importazione", "description": "Istanza di destinazione: {instance_name} ({instance_id}). File: {filename}. Chiusi: {closed_count}; aperti: {open_count}; nuovi: {new_count}; identici: {identical_count}; conflitti mese corrente: {current_conflict_count}; fusione sicura: {merge_status}.", "data": {"confirm": "Importa", "current_month_strategy": "Mese corrente"}}, "export_history": {"title": "Esporta storico CSV", "description": "Istanza di destinazione: {instance_name} ({instance_id}). Scegli l'anno corrente o quello precedente.", "data": {"year": "Anno"}}, "export_ready": {"title": "Esportazione CSV pronta", "description": "Istanza: {instance_name} ({instance_id}); anno: {year}. [Scarica CSV]({download_url}).", "data": {"done": "Termina"}}}, "error": {"notification_target_not_found": "Seleziona un'entità di notifica disponibile.", "notification_test_failed": "La notifica di prova non è riuscita.", "history_import_invalid": "Il CSV non è valido o non è supportato.", "history_invalid_headers": "Le colonne del CSV non corrispondono allo schema documentato.", "history_closed_month_conflict": "Un mese chiuso è in conflitto con il registro esistente e non può essere sovrascritto.", "history_open_month_not_current": "Un record aperto deve riferirsi al mese corrente."}, "abort": {"missing_import_preview": "L'anteprima non è più disponibile.", "invalid_export_year": "È possibile esportare soltanto l'anno corrente e quello precedente.", "missing_export_selection": "La selezione dell'esportazione non è più disponibile."}},
-  "selector": {"source_mode": {"options": {"energy": "Energia cumulativa", "power": "Potenza istantanea", "dual": "Energia con verifica tramite potenza"}}, "current_month_strategy": {"options": {"keep_native": "Mantieni i dati raccolti da Energy Report", "merge_non_overlapping": "Unisci lo storico CSV ai dati Energy Report successivi", "replace_with_csv": "Sostituisci con l'istantanea CSV"}}},
-  "entity": {"sensor": {"current_month_energy": {"name": "Energia mese corrente"}, "current_month_cost": {"name": "Costo mese corrente"}, "forecast_energy": {"name": "Previsione energia fine mese"}, "forecast_cost": {"name": "Previsione costo fine mese"}, "annual_energy": {"name": "Energia anno corrente"}, "annual_cost": {"name": "Costo anno corrente"}, "previous_month_energy": {"name": "Energia mese precedente"}, "previous_month_cost": {"name": "Costo mese precedente"}, "diagnostics": {"name": "Diagnostica"}}, "number": {"tariff": {"name": "Tariffa"}}, "button": {"resend_last_report": {"name": "Invia o reinvia ultimo report"}}}
+    "config": {
+        "step": {
+            "user": {
+                "title": "Crea Energy Report",
+                "data": {
+                    "name": "Nome",
+                    "source_mode": "Modalit\u00e0 sorgente"
+                }
+            },
+            "sources": {
+                "title": "Sorgenti di consumo",
+                "data": {
+                    "energy_sensor": "Sensore energia cumulativa",
+                    "power_sensor": "Sensore potenza istantanea"
+                }
+            },
+            "reporting": {
+                "title": "Costo e report",
+                "description": "Scegli una singola entit\u00e0 di notifica. Sono supportati anche i gruppi di notifica.",
+                "data": {
+                    "tariff": "Tariffa per kWh",
+                    "notification_target": "Destinazione notifiche"
+                }
+            },
+            "test_notification": {
+                "title": "Notifica di prova",
+                "data": {
+                    "send_test": "Invia notifica di prova"
+                }
+            },
+            "reconfigure": {
+                "title": "Sostituisci sorgenti",
+                "data": {
+                    "source_mode": "Modalit\u00e0 sorgente",
+                    "energy_sensor": "Sensore energia cumulativa",
+                    "power_sensor": "Sensore potenza istantanea"
+                }
+            }
+        },
+        "error": {
+            "invalid_energy_sensor": "Seleziona un sensore energia compatibile.",
+            "invalid_power_sensor": "Seleziona un sensore potenza compatibile.",
+            "notification_target_not_found": "Seleziona un'entit\u00e0 di notifica disponibile.",
+            "notification_test_failed": "La notifica di prova non \u00e8 riuscita."
+        },
+        "abort": {
+            "already_configured": "Esiste gi\u00e0 un'istanza con questo nome."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Opzioni Energy Report",
+                "menu_options": {
+                    "settings": "Impostazioni",
+                    "test_notification": "Notifica di prova",
+                    "import_history": "Importa storico CSV",
+                    "export_history": "Esporta storico CSV",
+                    "review_anomalies": "Revisiona anomalie di consumo"
+                }
+            },
+            "settings": {
+                "title": "Impostazioni avanzate",
+                "data": {
+                    "notification_target": "Destinazione notifiche",
+                    "max_power_kw": "Potenza massima plausibile (kW)",
+                    "source_timeout_minutes": "Timeout sorgente (minuti)",
+                    "report_hour": "Ora del report mensile"
+                }
+            },
+            "test_notification": {
+                "title": "Notifica di prova",
+                "description": "Invia una prova tramite {target}.",
+                "data": {
+                    "confirm": "Invia prova"
+                }
+            },
+            "import_history": {
+                "title": "Importa storico CSV",
+                "description": "Istanza di destinazione: {instance_name} ({instance_id}). Scegli un CSV da questo dispositivo. Dopo la conferma cambia soltanto questa istanza.",
+                "data": {
+                    "csv_file": "File CSV"
+                }
+            },
+            "confirm_import": {
+                "title": "Conferma importazione",
+                "description": "Istanza di destinazione: {instance_name} ({instance_id}). File: {filename}. Chiusi: {closed_count}; aperti: {open_count}; nuovi: {new_count}; identici: {identical_count}; conflitti mese corrente: {current_conflict_count}; fusione sicura: {merge_status}.",
+                "data": {
+                    "confirm": "Importa",
+                    "current_month_strategy": "Mese corrente"
+                }
+            },
+            "export_history": {
+                "title": "Esporta storico CSV",
+                "description": "Istanza di destinazione: {instance_name} ({instance_id}). Scegli l'anno corrente o quello precedente.",
+                "data": {
+                    "year": "Anno"
+                }
+            },
+            "export_ready": {
+                "title": "Esportazione CSV pronta",
+                "description": "Istanza: {instance_name} ({instance_id}); anno: {year}. [Scarica CSV]({download_url}).",
+                "data": {
+                    "done": "Termina"
+                }
+            },
+            "review_anomalies": {
+                "title": "Revisiona anomalie di consumo",
+                "description": "Seleziona un evento non risolto. Gli aggregati precedenti sono indicati quando i dettagli originali non sono disponibili.",
+                "data": {"anomaly_target": "Anomalia in attesa"}
+            },
+            "confirm_anomaly": {
+                "title": "Revisione anomalia",
+                "description": "Mese: {month}. Rilevata: {detected_at}. Sorgente: {source}. Lettura precedente/nuova: {previous}/{new} kWh. Intervallo: {interval} minuti. Incremento escluso: {excluded} kWh. Limite plausibile: {limit} kWh. Motivo: {reason}. Impatto stimato: {cost} {currency}. Accettando viene aggiunto al consumo; confermando l'esclusione resta fuori dal conteggio e la revisione viene chiusa.",
+                "data": {"decision": "Decisione"}
+            }
+        },
+        "error": {
+            "notification_target_not_found": "Seleziona un'entit\u00e0 di notifica disponibile.",
+            "notification_test_failed": "La notifica di prova non \u00e8 riuscita.",
+            "history_import_invalid": "Il CSV non \u00e8 valido o non \u00e8 supportato.",
+            "history_invalid_headers": "Le colonne del CSV non corrispondono allo schema documentato.",
+            "history_closed_month_conflict": "Un mese chiuso \u00e8 in conflitto con il registro esistente e non pu\u00f2 essere sovrascritto.",
+            "history_open_month_not_current": "Un record aperto deve riferirsi al mese corrente.",
+            "anomaly_review_failed": "Non e stato possibile revisionare l'anomalia. Ricarica la procedura e riprova."
+        },
+        "abort": {
+            "missing_import_preview": "L'anteprima non \u00e8 pi\u00f9 disponibile.",
+            "invalid_export_year": "\u00c8 possibile esportare soltanto l'anno corrente e quello precedente.",
+            "missing_export_selection": "La selezione dell'esportazione non \u00e8 pi\u00f9 disponibile.",
+            "no_pending_anomalies": "Non ci sono anomalie di consumo in attesa di revisione.",
+            "anomaly_not_found": "L'anomalia selezionata non \u00e8 pi\u00f9 disponibile."
+        }
+    },
+    "selector": {
+        "anomaly_decision": {
+            "options": {
+                "accept_increment": "Accetta l'incremento e includilo nel consumo",
+                "confirm_exclusion": "Conferma l'esclusione dopo la revisione"
+            }
+        },
+        "source_mode": {
+            "options": {
+                "energy": "Energia cumulativa",
+                "power": "Potenza istantanea",
+                "dual": "Energia con verifica tramite potenza"
+            }
+        },
+        "current_month_strategy": {
+            "options": {
+                "keep_native": "Mantieni i dati raccolti da Energy Report",
+                "merge_non_overlapping": "Unisci lo storico CSV ai dati Energy Report successivi",
+                "replace_with_csv": "Sostituisci con l'istantanea CSV"
+            }
+        }
+    },
+    "entity": {
+        "sensor": {
+            "current_month_energy": {
+                "name": "Energia mese corrente"
+            },
+            "current_month_cost": {
+                "name": "Costo mese corrente"
+            },
+            "forecast_energy": {
+                "name": "Previsione energia fine mese"
+            },
+            "forecast_cost": {
+                "name": "Previsione costo fine mese"
+            },
+            "annual_energy": {
+                "name": "Energia anno corrente"
+            },
+            "annual_cost": {
+                "name": "Costo anno corrente"
+            },
+            "previous_month_energy": {
+                "name": "Energia mese precedente"
+            },
+            "previous_month_cost": {
+                "name": "Costo mese precedente"
+            },
+            "diagnostics": {
+                "name": "Diagnostica"
+            }
+        },
+        "number": {
+            "tariff": {
+                "name": "Tariffa"
+            }
+        },
+        "button": {
+            "resend_last_report": {
+                "name": "Invia o reinvia ultimo report"
+            }
+        }
+    }
 }

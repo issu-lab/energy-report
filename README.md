@@ -165,6 +165,8 @@ When the source decreases, Energy Report treats the change as a meter reset:
 
 A positive jump is evaluated against elapsed time and maximum plausible power. An implausible increment is excluded and diagnosed instead of being silently accepted or hidden behind a fixed kWh threshold.
 
+Each new exclusion records its timestamp, source, readings, interval, plausibility limit, energy and cost impact. **Settings → Review consumption anomalies** then offers two explicit decisions: include the increment as valid consumption, or confirm its exclusion after review. Decisions are idempotent, retain provenance and create a bounded pre-change backup. Older ledgers that only contain an aggregate excluded value remain reviewable, but Energy Report labels them as legacy aggregates and does not invent missing event details.
+
 ---
 
 ## Instantaneous Power Strategy
@@ -292,12 +294,13 @@ The disabled-by-default diagnostic sensor reports:
 - power shadow total and percentage deviation;
 - coverage;
 - resets, source changes and anomalous jumps;
+- pending anomaly reviews, unresolved excluded energy and the latest decision;
 - cumulative-source gap state;
 - last valid energy and power timestamps;
 - last closed report and notification outcome;
 - latest actionable error.
 
-Downloadable diagnostics include the current accounting record and annual totals. They exclude source entity IDs and the configured notification target.
+Downloadable diagnostics include the current accounting record, annual totals, redacted anomaly events and review decisions. They exclude source entity IDs and the configured notification target.
 
 ---
 
@@ -357,7 +360,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Consumption-only accounting does not model photovoltaic production or export.
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
-- Closed months are intentionally immutable.
+- Closed months are immutable during automatic accounting and CSV import. An explicit, backed-up anomaly review is the only audited correction path.
 - Instances are independent and cannot be aggregated by Energy Report 1.0.1.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The integration compatibility baseline remains Home Assistant 2026.8 or newer; the built-in Marketplace requires Home Assistant 2026.11 or newer.

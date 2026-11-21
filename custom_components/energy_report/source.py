@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from uuid import uuid4
 
-from .models import LedgerState
+from .models import AnomalyEvent, LedgerState, month_key
 
 
 @dataclass(frozen=True)
@@ -14,6 +15,7 @@ class EnergyDecision:
 
     status: str
     delta_kwh: float = 0.0
+    anomaly_id: str | None = None
 
 
 def process_energy_reading(
@@ -23,6 +25,7 @@ def process_energy_reading(
     max_power_kw: float,
     tariff: float,
     currency: str,
+    source_entity: str | None = None,
 ) -> EnergyDecision:
     """Process a cumulative reading without silently accepting anomalies."""
     previous = state.last_energy_kwh
@@ -46,9 +49,29 @@ def process_energy_reading(
     if delta > plausible:
         record = state.ensure_month(now, tariff, currency)
         record.excluded_kwh += delta
+        event_id = uuid4().hex
+        state.anomaly_events.append(
+            AnomalyEvent(
+                event_id=event_id,
+                detected_at=now.isoformat(),
+                month_key=month_key(now),
+                source_type="cumulative_energy",
+                source_entity=source_entity,
+                previous_value_kwh=previous,
+                new_value_kwh=value_kwh,
+                previous_at=previous_at.isoformat(),
+                current_at=now.isoformat(),
+                elapsed_seconds=max(0.0, (now - previous_at).total_seconds()),
+                excluded_kwh=delta,
+                plausible_limit_kwh=plausible,
+                reason="implausible_energy_jump",
+                tariff_per_kwh=tariff,
+                currency=currency,
+            )
+        )
         state.anomaly_count += 1
         state.last_error = "implausible_energy_jump"
-        return EnergyDecision("excluded", delta)
+        return EnergyDecision("excluded", delta, event_id)
 
     state.add_energy_delta(previous_at, now, delta, tariff, currency)
     return EnergyDecision("accepted", delta)

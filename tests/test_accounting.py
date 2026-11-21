@@ -39,6 +39,93 @@ class AccountingTests(unittest.TestCase):
         self.assertEqual(state.months["2026-08"].excluded_kwh, 50)
         self.assertEqual(state.last_energy_kwh, 60)
         self.assertEqual(state.anomaly_count, 1)
+        self.assertEqual(len(state.anomaly_events), 1)
+        event = state.anomaly_events[0]
+        self.assertEqual(event.previous_value_kwh, 10)
+        self.assertEqual(event.new_value_kwh, 60)
+        self.assertEqual(event.excluded_kwh, 50)
+        self.assertEqual(event.review_status, "pending")
+        self.assertEqual(state.pending_anomaly_count, 1)
+
+    def test_accept_anomaly_is_auditable_and_idempotent(self):
+        state = models.LedgerState(
+            last_energy_kwh=10,
+            last_energy_at="2026-08-01T10:00:00+00:00",
+        )
+        result = source.process_energy_reading(
+            state,
+            60,
+            datetime(2026, 8, 1, 10, 1, tzinfo=UTC),
+            10,
+            0.28,
+            "EUR",
+            "sensor.main_energy",
+        )
+        target = f"event:{result.anomaly_id}"
+        reviewed_at = datetime(2026, 8, 1, 10, 5, tzinfo=UTC)
+        state.review_anomaly(target, "accept_increment", reviewed_at)
+        record = state.months["2026-08"]
+        self.assertEqual(record.measured_kwh, 50)
+        self.assertEqual(record.excluded_kwh, 50)
+        self.assertEqual(record.reviewed_excluded_kwh, 50)
+        self.assertEqual(record.data_quality, "complete")
+        self.assertEqual(state.pending_anomaly_count, 0)
+        self.assertEqual(len(state.anomaly_review_backups), 1)
+        self.assertEqual(state.anomaly_reviews[-1]["decision"], "accept_increment")
+        state.review_anomaly(target, "accept_increment", reviewed_at)
+        self.assertEqual(record.measured_kwh, 50)
+        self.assertEqual(len(state.anomaly_review_backups), 1)
+
+    def test_confirm_exclusion_does_not_add_consumption(self):
+        state = models.LedgerState(
+            last_energy_kwh=10,
+            last_energy_at="2026-08-01T10:00:00+00:00",
+        )
+        result = source.process_energy_reading(
+            state, 60, datetime(2026, 8, 1, 10, 1, tzinfo=UTC), 10, 0.28, "EUR"
+        )
+        state.review_anomaly(
+            f"event:{result.anomaly_id}",
+            "confirm_exclusion",
+            datetime(2026, 8, 1, 10, 5, tzinfo=UTC),
+        )
+        record = state.months["2026-08"]
+        self.assertEqual(record.measured_kwh, 0)
+        self.assertEqual(record.excluded_kwh, 50)
+        self.assertEqual(record.data_quality, "complete")
+
+    def test_legacy_aggregate_is_reviewed_without_fabricated_event(self):
+        state = models.LedgerState()
+        record = state.ensure_month(datetime(2026, 8, 1, tzinfo=UTC), 0.28, "EUR")
+        record.excluded_kwh = 0.0208
+        restored = models.LedgerState.from_dict(state.to_dict())
+        self.assertEqual(restored.anomaly_events, [])
+        self.assertAlmostEqual(restored.legacy_unresolved_kwh("2026-08"), 0.0208)
+        restored.review_anomaly(
+            "legacy:2026-08",
+            "confirm_exclusion",
+            datetime(2026, 8, 2, tzinfo=UTC),
+        )
+        self.assertEqual(restored.pending_anomaly_count, 0)
+        self.assertEqual(restored.months["2026-08"].measured_kwh, 0)
+
+    def test_schema_one_migrates_to_schema_two(self):
+        raw = {
+            "schema_version": 1,
+            "months": {
+                "2026-08": {
+                    "year": 2026,
+                    "month": 8,
+                    "period_start": "2026-08-01T00:00:00+00:00",
+                    "period_end": "2026-08-31T23:59:59.999999+00:00",
+                    "excluded_kwh": 1.5,
+                }
+            },
+        }
+        state = models.LedgerState.from_dict(raw)
+        self.assertEqual(state.schema_version, 2)
+        self.assertEqual(state.pending_anomaly_count, 1)
+        self.assertEqual(state.anomaly_events, [])
 
     def test_power_uses_trapezoidal_integration(self):
         state = models.LedgerState(last_power_kw=1, last_power_at="2026-08-01T10:00:00+00:00")

@@ -124,7 +124,11 @@ class EnergyReportController:
 
     @property
     def diagnostic_status(self) -> str:
-        if self.current_record.data_quality == "incomplete" or self.state.last_error:
+        if (
+            self.current_record.data_quality == "incomplete"
+            or self.state.pending_anomaly_count > 0
+            or self.state.last_error
+        ):
             return "attention"
         if self.state.energy_gap_active:
             return "degraded"
@@ -147,6 +151,12 @@ class EnergyReportController:
             "reset_count": self.state.reset_count,
             "source_change_count": self.state.source_change_count,
             "anomaly_count": self.state.anomaly_count,
+            "pending_anomaly_count": self.state.pending_anomaly_count,
+            "unresolved_excluded_kwh": round(record.unresolved_excluded_kwh, 6),
+            "anomaly_review_backup_count": len(self.state.anomaly_review_backups),
+            "last_anomaly_review": (
+                self.state.anomaly_reviews[-1] if self.state.anomaly_reviews else None
+            ),
             "energy_gap_active": self.state.energy_gap_active,
             "last_energy_at": self.state.last_energy_at,
             "last_power_at": self.state.last_power_at,
@@ -264,6 +274,7 @@ class EnergyReportController:
             float(self.option(OPT_MAX_POWER_KW)),
             self.tariff,
             self.currency,
+            self.entry.data.get(CONF_ENERGY_SENSOR),
         )
         if decision.status in {"accepted", "baseline", "reset"}:
             self.state.last_error = None
@@ -518,6 +529,69 @@ class EnergyReportController:
         await self._async_save()
         for year in years:
             await self.hass.async_add_executor_job(self.archive.write_year, self.state, year)
+        self._publish()
+
+    def pending_anomaly_reviews(self) -> list[dict[str, Any]]:
+        """Return detailed events and honest legacy aggregates awaiting review."""
+        pending: list[dict[str, Any]] = []
+        for event in self.state.anomaly_events:
+            if event.review_status != "pending":
+                continue
+            pending.append(
+                {
+                    "target": f"event:{event.event_id}",
+                    "month_key": event.month_key,
+                    "detected_at": event.detected_at,
+                    "source": event.source_entity or event.source_type,
+                    "previous_value_kwh": event.previous_value_kwh,
+                    "new_value_kwh": event.new_value_kwh,
+                    "interval_minutes": event.elapsed_seconds / 60,
+                    "excluded_kwh": event.excluded_kwh,
+                    "plausible_limit_kwh": event.plausible_limit_kwh,
+                    "reason": event.reason,
+                    "impact_cost": event.impact_cost,
+                    "currency": event.currency,
+                    "details_available": True,
+                }
+            )
+        for key in sorted(self.state.months, reverse=True):
+            amount = self.state.legacy_unresolved_kwh(key)
+            if amount <= 0.000001:
+                continue
+            record = self.state.months[key]
+            pending.append(
+                {
+                    "target": f"legacy:{key}",
+                    "month_key": key,
+                    "detected_at": "not available",
+                    "source": "historical aggregate",
+                    "previous_value_kwh": None,
+                    "new_value_kwh": None,
+                    "interval_minutes": None,
+                    "excluded_kwh": amount,
+                    "plausible_limit_kwh": None,
+                    "reason": "legacy_exclusion_without_event_details",
+                    "impact_cost": amount * record.tariff_per_kwh,
+                    "currency": record.currency,
+                    "details_available": False,
+                }
+            )
+        return pending
+
+    async def async_review_anomaly(self, target: str, decision: str) -> None:
+        """Persist one anomaly decision and refresh its annual archive."""
+        key = self.state.review_anomaly(target, decision, dt_util.now())
+        if (
+            self.state.pending_anomaly_count == 0
+            and self.state.last_error == "implausible_energy_jump"
+        ):
+            self.state.last_error = None
+        await self._async_save()
+        await self.hass.async_add_executor_job(
+            self.archive.write_year,
+            self.state,
+            int(key[:4]),
+        )
         self._publish()
 
     async def async_export_year(self, year: int) -> Path:

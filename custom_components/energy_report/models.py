@@ -63,6 +63,7 @@ class MonthRecord:
     covered_seconds: float = 0.0
     unknown_seconds: float = 0.0
     excluded_kwh: float = 0.0
+    reviewed_excluded_kwh: float = 0.0
     tariff_per_kwh: float = 0.0
     currency: str = "EUR"
     origin: str = "native"
@@ -96,7 +97,7 @@ class MonthRecord:
     def data_quality(self) -> str:
         if (
             self.unknown_seconds > 0
-            or self.excluded_kwh > 0
+            or self.unresolved_excluded_kwh > 0.000001
             or (self.status == "closed" and self.coverage_percent < 99.5)
         ):
             return "incomplete"
@@ -104,11 +105,51 @@ class MonthRecord:
             return "reconstructed"
         return "complete"
 
+    @property
+    def unresolved_excluded_kwh(self) -> float:
+        """Return excluded energy that still needs an explicit review."""
+        return max(0.0, self.excluded_kwh - self.reviewed_excluded_kwh)
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "MonthRecord":
+        fields = cls.__dataclass_fields__
+        return cls(**{key: value for key, value in raw.items() if key in fields})
+
+
+@dataclass
+class AnomalyEvent:
+    """Auditable cumulative-energy anomaly and its review decision."""
+
+    event_id: str
+    detected_at: str
+    month_key: str
+    source_type: str
+    source_entity: str | None
+    previous_value_kwh: float
+    new_value_kwh: float
+    previous_at: str
+    current_at: str
+    elapsed_seconds: float
+    excluded_kwh: float
+    plausible_limit_kwh: float
+    reason: str
+    tariff_per_kwh: float
+    currency: str
+    review_status: str = "pending"
+    reviewed_at: str | None = None
+
+    @property
+    def impact_cost(self) -> float:
+        return self.excluded_kwh * self.tariff_per_kwh
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> "AnomalyEvent":
         fields = cls.__dataclass_fields__
         return cls(**{key: value for key, value in raw.items() if key in fields})
 
@@ -132,7 +173,7 @@ def new_month(moment: datetime, tariff: float, currency: str) -> MonthRecord:
 class LedgerState:
     """Versioned state that survives Home Assistant restarts."""
 
-    schema_version: int = 1
+    schema_version: int = 2
     months: dict[str, MonthRecord] = field(default_factory=dict)
     last_energy_kwh: float | None = None
     last_energy_at: str | None = None
@@ -145,6 +186,9 @@ class LedgerState:
     reset_count: int = 0
     source_change_count: int = 0
     anomaly_count: int = 0
+    anomaly_events: list[AnomalyEvent] = field(default_factory=list)
+    anomaly_reviews: list[dict[str, Any]] = field(default_factory=list)
+    anomaly_review_backups: list[dict[str, Any]] = field(default_factory=list)
     last_error: str | None = None
     last_report_key: str | None = None
     last_notification_at: str | None = None
@@ -228,6 +272,101 @@ class LedgerState:
         return record
 
     @property
+    def pending_anomaly_count(self) -> int:
+        """Return detailed and legacy exclusions awaiting review."""
+        detailed = sum(event.review_status == "pending" for event in self.anomaly_events)
+        detailed_by_month: dict[str, float] = {}
+        for event in self.anomaly_events:
+            if event.review_status != "pending":
+                continue
+            detailed_by_month[event.month_key] = (
+                detailed_by_month.get(event.month_key, 0.0) + event.excluded_kwh
+            )
+        legacy = sum(
+            max(0.0, record.unresolved_excluded_kwh - detailed_by_month.get(key, 0.0))
+            > 0.000001
+            for key, record in self.months.items()
+        )
+        return detailed + legacy
+
+    def legacy_unresolved_kwh(self, key: str) -> float:
+        """Return unresolved aggregate not represented by detailed events."""
+        record = self.months[key]
+        detailed = sum(
+            event.excluded_kwh
+            for event in self.anomaly_events
+            if event.month_key == key and event.review_status == "pending"
+        )
+        return max(0.0, record.unresolved_excluded_kwh - detailed)
+
+    def review_anomaly(self, target: str, decision: str, reviewed_at: datetime) -> str:
+        """Apply one explicit, idempotent anomaly decision and return its month."""
+        if decision not in {"accept_increment", "confirm_exclusion"}:
+            raise ValueError("invalid_anomaly_decision")
+        before = self.to_dict()
+        before.pop("anomaly_review_backups", None)
+
+        if target.startswith("event:"):
+            event_id = target.removeprefix("event:")
+            event = next(
+                (item for item in self.anomaly_events if item.event_id == event_id),
+                None,
+            )
+            if event is None:
+                raise ValueError("anomaly_not_found")
+            if event.review_status != "pending":
+                if event.review_status == decision:
+                    return event.month_key
+                raise ValueError("anomaly_already_reviewed")
+            record = self.months[event.month_key]
+            if decision == "accept_increment":
+                record.measured_kwh += event.excluded_kwh
+            record.reviewed_excluded_kwh = min(
+                record.excluded_kwh,
+                record.reviewed_excluded_kwh + event.excluded_kwh,
+            )
+            event.review_status = decision
+            event.reviewed_at = reviewed_at.isoformat()
+            key = event.month_key
+        elif target.startswith("legacy:"):
+            key = target.removeprefix("legacy:")
+            amount = self.legacy_unresolved_kwh(key)
+            if amount <= 0.000001:
+                return key
+            record = self.months[key]
+            if decision == "accept_increment":
+                record.measured_kwh += amount
+            record.reviewed_excluded_kwh = min(
+                record.excluded_kwh,
+                record.reviewed_excluded_kwh + amount,
+            )
+        else:
+            raise ValueError("anomaly_not_found")
+
+        self.anomaly_review_backups.append(
+            {
+                "created_at": reviewed_at.isoformat(),
+                "target": target,
+                "decision": decision,
+                "state": before,
+            }
+        )
+        self.anomaly_review_backups = self.anomaly_review_backups[-10:]
+        self.anomaly_reviews.append(
+            {
+                "reviewed_at": reviewed_at.isoformat(),
+                "target": target,
+                "month_key": key,
+                "decision": decision,
+                "excluded_kwh": (
+                    event.excluded_kwh if target.startswith("event:") else amount
+                ),
+                "details_available": target.startswith("event:"),
+            }
+        )
+        return key
+
+    @property
     def latest_closed_month_key(self) -> str | None:
         """Return the newest closed month, including imported history."""
         closed_keys = [
@@ -238,19 +377,29 @@ class LedgerState:
     def to_dict(self) -> dict[str, Any]:
         raw = asdict(self)
         raw["months"] = {key: value.to_dict() for key, value in self.months.items()}
+        raw["anomaly_events"] = [event.to_dict() for event in self.anomaly_events]
         return raw
 
     @classmethod
     def from_dict(cls, raw: dict[str, Any]) -> "LedgerState":
         fields = cls.__dataclass_fields__
-        data = {key: value for key, value in raw.items() if key in fields and key != "months"}
+        data = {
+            key: value
+            for key, value in raw.items()
+            if key in fields and key not in {"months", "anomaly_events"}
+        }
         state = cls(**data)
-        state.schema_version = 1
+        state.schema_version = 2
         state.months = {
             key: MonthRecord.from_dict(value)
             for key, value in raw.get("months", {}).items()
             if isinstance(value, dict)
         }
+        state.anomaly_events = [
+            AnomalyEvent.from_dict(value)
+            for value in raw.get("anomaly_events", [])
+            if isinstance(value, dict)
+        ]
         return state
 
 

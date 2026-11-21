@@ -245,6 +245,7 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self) -> None:
         self._preview: ImportPreview | None = None
+        self._anomaly_target: str | None = None
 
     async def async_step_init(self, user_input=None) -> ConfigFlowResult:
         return self.async_show_menu(
@@ -254,7 +255,108 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
                 "test_notification",
                 "import_history",
                 "export_history",
+                "review_anomalies",
             ],
+        )
+
+    async def async_step_review_anomalies(self, user_input=None) -> ConfigFlowResult:
+        """Select one pending detailed event or legacy aggregate."""
+        controller = self.hass.data[DOMAIN][self.config_entry.entry_id]
+        pending = controller.pending_anomaly_reviews()
+        if not pending:
+            return self.async_abort(reason="no_pending_anomalies")
+        by_target = {item["target"]: item for item in pending}
+        if user_input is not None:
+            self._anomaly_target = user_input["anomaly_target"]
+            if self._anomaly_target not in by_target:
+                return self.async_abort(reason="anomaly_not_found")
+            return await self.async_step_confirm_anomaly()
+        options = [
+            {
+                "value": item["target"],
+                "label": (
+                    f"{item['month_key']} - {item['excluded_kwh']:.6f} kWh - "
+                    f"{item['detected_at']}"
+                ),
+            }
+            for item in pending
+        ]
+        return self.async_show_form(
+            step_id="review_anomalies",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("anomaly_target"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(options=options)
+                    )
+                }
+            ),
+        )
+
+    async def async_step_confirm_anomaly(self, user_input=None) -> ConfigFlowResult:
+        """Show anomaly evidence and require an explicit accounting decision."""
+        controller = self.hass.data[DOMAIN][self.config_entry.entry_id]
+        item = next(
+            (
+                value
+                for value in controller.pending_anomaly_reviews()
+                if value["target"] == self._anomaly_target
+            ),
+            None,
+        )
+        if item is None:
+            return self.async_abort(reason="anomaly_not_found")
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                await controller.async_review_anomaly(
+                    item["target"], user_input["decision"]
+                )
+                return self.async_create_entry(title="", data=self.config_entry.options)
+            except ValueError:
+                errors["base"] = "anomaly_review_failed"
+        unavailable = "not available"
+        return self.async_show_form(
+            step_id="confirm_anomaly",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("decision"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=["accept_increment", "confirm_exclusion"],
+                            translation_key="anomaly_decision",
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "month": item["month_key"],
+                "detected_at": str(item["detected_at"]),
+                "source": str(item["source"]),
+                "previous": (
+                    unavailable
+                    if item["previous_value_kwh"] is None
+                    else f"{item['previous_value_kwh']:.6f}"
+                ),
+                "new": (
+                    unavailable
+                    if item["new_value_kwh"] is None
+                    else f"{item['new_value_kwh']:.6f}"
+                ),
+                "interval": (
+                    unavailable
+                    if item["interval_minutes"] is None
+                    else f"{item['interval_minutes']:.2f}"
+                ),
+                "excluded": f"{item['excluded_kwh']:.6f}",
+                "limit": (
+                    unavailable
+                    if item["plausible_limit_kwh"] is None
+                    else f"{item['plausible_limit_kwh']:.6f}"
+                ),
+                "reason": item["reason"],
+                "cost": f"{item['impact_cost']:.2f}",
+                "currency": item["currency"],
+            },
         )
 
     def _current(self, key: str):

@@ -2,11 +2,14 @@
 
 All notable changes to Energy Report are documented here.
 
-## 1.0.1 - 2026-10-21
+## 1.0.1 - 2026-11-21
 
 - Declared the official `energy` integration category for Home Assistant Marketplace discovery.
 - Updated installation guidance for the built-in Marketplace in Home Assistant 2026.11 while retaining the documented HACS path for Home Assistant 2026.8 through 2026.10.
 - Added package tests for the category and Marketplace installation metadata.
+- Added detailed, per-instance anomaly events with explicit accept-or-exclude review actions.
+- Added honest review of legacy aggregate exclusions without fabricating unavailable event details.
+- Added idempotent accounting decisions, bounded pre-change backups and redacted diagnostic evidence.
 
 ## 1.0.0 - 2026-09-02
 
