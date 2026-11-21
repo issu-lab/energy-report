@@ -33,7 +33,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(manifest["categories"], ["energy"])
         self.assertEqual(manifest["integration_type"], "device")
         self.assertTrue(manifest["config_flow"])
-        self.assertEqual(hacs["homeassistant"], "2026.8.0")
+        self.assertEqual(hacs["homeassistant"], "2026.11.0")
 
     def test_translation_shapes_match(self):
         english = json.loads((INTEGRATION / "translations" / "en.json").read_text())
@@ -60,7 +60,7 @@ class PackageTests(unittest.TestCase):
         )
         self.assertNotIn("energy-report-footer", readme)
 
-    def test_readme_uses_hacs_safe_images_and_destinations(self):
+    def test_readme_uses_marketplace_safe_images_and_destinations(self):
         readme = (ROOT / "README.md").read_text()
         self.assertTrue(
             readme.startswith(
@@ -94,7 +94,7 @@ class PackageTests(unittest.TestCase):
         ):
             self.assertNotIn(italian_label, readme)
 
-    def test_readme_has_marketplace_installation_and_hacs_compatibility(self):
+    def test_readme_has_marketplace_installation(self):
         readme = (ROOT / "README.md").read_text()
         self.assertIn(
             "https://my.home-assistant.io/badges/marketplace_repository.svg",
@@ -106,7 +106,7 @@ class PackageTests(unittest.TestCase):
             readme,
         )
         self.assertIn("Home Assistant 2026.11", readme)
-        self.assertIn("For Home Assistant 2026.8 through 2026.10, use HACS", readme)
+        self.assertNotIn("HACS", readme)
 
     def test_visual_asset_dimensions(self):
         assets = ROOT / "assets"

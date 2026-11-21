@@ -5,7 +5,7 @@ All notable changes to Energy Report are documented here.
 ## 1.0.1 - 2026-11-21
 
 - Declared the official `energy` integration category for Home Assistant Marketplace discovery.
-- Updated installation guidance for the built-in Marketplace in Home Assistant 2026.11 while retaining the documented HACS path for Home Assistant 2026.8 through 2026.10.
+- Updated installation guidance for the built-in Marketplace and set Home Assistant 2026.11 as the supported baseline.
 - Added package tests for the category and Marketplace installation metadata.
 - Added detailed, per-instance anomaly events with explicit accept-or-exclude review actions.
 - Added honest review of legacy aggregate exclusions without fabricating unavailable event details.
@@ -21,7 +21,7 @@ All notable changes to Energy Report are documented here.
 ## 0.1.2 - 2026-08-31
 
 - Republished the 0.1.1 application patch under a fresh immutable tag after GitHub codeload returned HTTP 400 for the original `v0.1.1` tag.
-- Included the HACS-safe absolute README footer URL already present on `main`.
+- Included the Marketplace-safe absolute README footer URL already present on `main`.
 
 ## 0.1.1 - 2026-08-30
 
@@ -62,4 +62,4 @@ All notable changes to Energy Report are documented here.
 - Versioned ledger, resilient monthly close, tariff, forecasts and diagnostics.
 - Annual CSV archive and transactional history import.
 - Configurable notification destination, test notification and resend-last-report button.
-- HACS metadata, English/Italian translations, tests and reproducible visual assets.
+- Marketplace metadata, English/Italian translations, tests and reproducible visual assets.
