@@ -2,6 +2,13 @@
 
 All notable changes to Energy Report are documented here.
 
+## 1.0.4 - 2026-11-21
+
+- Added a configurable 0.050 kWh automatic tolerance for isolated micro-anomalies.
+- Kept automatically accepted increments in the ledger and diagnostic event history with explicit provenance.
+- Added monthly safeguards that require review after 0.500 kWh or 10 automatically accepted events.
+- Allowed setting the tolerance to zero to retain strict manual review.
+
 ## 1.0.3 - 2026-11-21
 
 - Fixed the native Repairs flow treating Home Assistant's initial `issue_id` payload as a submitted accounting decision.

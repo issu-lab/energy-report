@@ -94,6 +94,55 @@ class AccountingTests(unittest.TestCase):
         self.assertEqual(record.excluded_kwh, 50)
         self.assertEqual(record.data_quality, "complete")
 
+    def test_micro_anomalies_are_auto_accepted_with_monthly_guard(self):
+        state = models.LedgerState(
+            last_energy_kwh=10,
+            last_energy_at="2026-08-01T10:00:00+00:00",
+        )
+        for minute in range(1, 12):
+            result = source.process_energy_reading(
+                state,
+                10 + minute * 0.05,
+                datetime(2026, 8, 1, 10, minute, tzinfo=UTC),
+                0.001,
+                0.28,
+                "EUR",
+                "sensor.main_energy",
+                0.05,
+            )
+            expected = "auto_accepted" if minute <= 10 else "excluded"
+            self.assertEqual(result.status, expected)
+        record = state.months["2026-08"]
+        self.assertAlmostEqual(record.measured_kwh, 0.5)
+        self.assertAlmostEqual(record.excluded_kwh, 0.55)
+        self.assertAlmostEqual(record.reviewed_excluded_kwh, 0.5)
+        self.assertEqual(state.pending_anomaly_count, 1)
+        self.assertEqual(
+            sum(
+                event.review_status == "auto_accepted_tolerance"
+                for event in state.anomaly_events
+            ),
+            10,
+        )
+
+    def test_zero_micro_anomaly_tolerance_requires_review(self):
+        state = models.LedgerState(
+            last_energy_kwh=10,
+            last_energy_at="2026-08-01T10:00:00+00:00",
+        )
+        result = source.process_energy_reading(
+            state,
+            10.02,
+            datetime(2026, 8, 1, 10, 1, tzinfo=UTC),
+            0.001,
+            0.28,
+            "EUR",
+            "sensor.main_energy",
+            0,
+        )
+        self.assertEqual(result.status, "excluded")
+        self.assertEqual(state.pending_anomaly_count, 1)
+
     def test_legacy_aggregate_is_reviewed_without_fabricated_event(self):
         state = models.LedgerState()
         record = state.ensure_month(datetime(2026, 8, 1, tzinfo=UTC), 0.28, "EUR")

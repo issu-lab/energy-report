@@ -39,6 +39,7 @@ from .const import (
     MODE_DUAL,
     MODE_ENERGY,
     MODE_POWER,
+    OPT_AUTO_ACCEPT_TOLERANCE_KWH,
     OPT_MAX_POWER_KW,
     OPT_NOTIFICATION_SERVICE,
     OPT_NOTIFICATION_TARGET,
@@ -153,6 +154,10 @@ class EnergyReportController:
             "reset_count": self.state.reset_count,
             "source_change_count": self.state.source_change_count,
             "anomaly_count": self.state.anomaly_count,
+            "auto_accepted_anomaly_count": sum(
+                event.review_status == "auto_accepted_tolerance"
+                for event in self.state.anomaly_events
+            ),
             "pending_anomaly_count": self.state.pending_anomaly_count,
             "unresolved_excluded_kwh": round(record.unresolved_excluded_kwh, 6),
             "anomaly_review_backup_count": len(self.state.anomaly_review_backups),
@@ -278,6 +283,7 @@ class EnergyReportController:
             self.tariff,
             self.currency,
             self.entry.data.get(CONF_ENERGY_SENSOR),
+            float(self.option(OPT_AUTO_ACCEPT_TOLERANCE_KWH)),
         )
         if decision.status in {"accepted", "baseline", "reset"}:
             self.state.last_error = None

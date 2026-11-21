@@ -24,7 +24,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ✅ Yes |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete |
-| **Current version** | `1.0.3` |
+| **Current version** | `1.0.4` |
 | **Minimum Home Assistant** | 2026.11.0 |
 | **Local tests** | ✅ 35 tests |
 | **Import and export validation** | ✅ Complete |
@@ -70,7 +70,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 Home Assistant Marketplace-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.3.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.4.
 
 ---
 
@@ -133,6 +133,8 @@ The initial wizard intentionally keeps plausibility, timeout and scheduling valu
 |---|---:|
 | Tariff | 0.240 per kWh |
 | Maximum plausible power | 10.0 kW |
+| Automatic micro-anomaly tolerance | 0.050 kWh |
+| Monthly automatic-acceptance guards | 0.500 kWh or 10 events |
 | Cumulative-source timeout | 15 minutes |
 | Monthly report hour | 08:00 |
 | Forecast minimum age | 3 complete days |
@@ -155,7 +157,7 @@ When the source decreases, Energy Report treats the change as a meter reset:
 3. the new value becomes the source baseline;
 4. only later positive increments are added.
 
-A positive jump is evaluated against elapsed time and maximum plausible power. An implausible increment is excluded and diagnosed instead of being silently accepted or hidden behind a fixed kWh threshold.
+A positive jump is evaluated against elapsed time and maximum plausible power. An implausible increment up to the configurable micro-anomaly tolerance is included automatically, recorded with `auto_accepted_tolerance` provenance and exposed in diagnostics. Automatic acceptance stops after 0.500 kWh or 10 events in the same month; larger or repeated anomalies require review. Setting the tolerance to zero disables automatic acceptance.
 
 Each new exclusion records its timestamp, source, readings, interval, plausibility limit, energy and cost impact. Energy Report immediately creates a native Home Assistant Repair linked to the affected config entry. Selecting **Fix** explains the evidence and offers two explicit decisions: include the increment as valid consumption, or confirm its exclusion after review. The device also exposes an enabled **Anomalies to review** sensor with the pending count and a concise summary. The advanced options flow remains available as a secondary path.
 
@@ -355,7 +357,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are immutable during automatic accounting and CSV import. An explicit, backed-up anomaly review is the only audited correction path.
-- Instances are independent and cannot be aggregated by Energy Report 1.0.3.
+- Instances are independent and cannot be aggregated by Energy Report 1.0.4.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The integration compatibility baseline is Home Assistant 2026.11 or newer.
 

@@ -29,6 +29,7 @@ from .const import (
     MODE_DUAL,
     MODE_ENERGY,
     MODE_POWER,
+    OPT_AUTO_ACCEPT_TOLERANCE_KWH,
     OPT_MAX_POWER_KW,
     OPT_NOTIFICATION_TARGET,
     OPT_REPORT_HOUR,
@@ -390,6 +391,10 @@ class EnergyReportOptionsFlow(config_entries.OptionsFlow):
                         OPT_MAX_POWER_KW,
                         default=self._current(OPT_MAX_POWER_KW),
                     ): _number(0.1, 100, 0.1),
+                    vol.Required(
+                        OPT_AUTO_ACCEPT_TOLERANCE_KWH,
+                        default=self._current(OPT_AUTO_ACCEPT_TOLERANCE_KWH),
+                    ): _number(0, 1, 0.001),
                     vol.Required(
                         OPT_SOURCE_TIMEOUT_MINUTES,
                         default=self._current(OPT_SOURCE_TIMEOUT_MINUTES),

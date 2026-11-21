@@ -62,9 +62,11 @@
             },
             "settings": {
                 "title": "Advanced settings",
+                "description": "Micro-anomalies at or below the configured tolerance are included automatically and retained in diagnostics. The safeguard stops after 0.50 kWh or 10 events in one month. Set the tolerance to 0 to require review for every anomaly.",
                 "data": {
                     "notification_target": "Notification destination",
                     "max_power_kw": "Maximum plausible power (kW)",
+                    "auto_accept_tolerance_kwh": "Automatic micro-anomaly tolerance (kWh)",
                     "source_timeout_minutes": "Source timeout (minutes)",
                     "report_hour": "Monthly report hour"
                 }

@@ -62,9 +62,11 @@
             },
             "settings": {
                 "title": "Impostazioni avanzate",
+                "description": "Le micro-anomalie entro la tolleranza configurata vengono incluse automaticamente e restano nella diagnostica. La protezione si interrompe dopo 0,50 kWh o 10 eventi nello stesso mese. Imposta la tolleranza a 0 per richiedere sempre la revisione.",
                 "data": {
                     "notification_target": "Destinazione notifiche",
                     "max_power_kw": "Potenza massima plausibile (kW)",
+                    "auto_accept_tolerance_kwh": "Tolleranza automatica micro-anomalie (kWh)",
                     "source_timeout_minutes": "Timeout sorgente (minuti)",
                     "report_hour": "Ora del report mensile"
                 }
