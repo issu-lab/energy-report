@@ -44,6 +44,8 @@ class PackageTests(unittest.TestCase):
         repairs = (INTEGRATION / "repairs.py").read_text()
         strings = json.loads((INTEGRATION / "strings.json").read_text())
         self.assertIn("async_create_fix_flow", repairs)
+        self.assertIn('"decision" in user_input', repairs)
+        self.assertIn("probatio.Schema", repairs)
         self.assertIn("consumption_anomaly", strings["issues"])
         self.assertIn("legacy_consumption_anomaly", strings["issues"])
         self.assertNotIn("description", strings["issues"]["consumption_anomaly"])

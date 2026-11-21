@@ -24,7 +24,7 @@ Energy Report creates a resilient energy ledger from an existing cumulative ener
 | **Recommended for production** | ✅ Yes |
 | **Setup difficulty** | 🟢 Beginner |
 | **Documentation** | ✅ Complete |
-| **Current version** | `1.0.2` |
+| **Current version** | `1.0.3` |
 | **Minimum Home Assistant** | 2026.11.0 |
 | **Local tests** | ✅ 35 tests |
 | **Import and export validation** | ✅ Complete |
@@ -70,7 +70,7 @@ The integration consumes existing Home Assistant sensor entities. It does not co
 - 🌍 English and Italian UI translations.
 - 📦 Home Assistant Marketplace-ready repository layout.
 
-Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.2.
+Energy Report intentionally handles positive consumption only. Solar production, grid export, batteries, time-of-use tariffs, fixed charges and cross-instance aggregation are not part of version 1.0.3.
 
 ---
 
@@ -355,7 +355,7 @@ Do not run two independent systems as authoritative monthly ledgers after cutove
 - Negative energy flows are unsupported.
 - Time-of-use tariffs, fixed charges and progressive pricing are unsupported.
 - Closed months are immutable during automatic accounting and CSV import. An explicit, backed-up anomaly review is the only audited correction path.
-- Instances are independent and cannot be aggregated by Energy Report 1.0.2.
+- Instances are independent and cannot be aggregated by Energy Report 1.0.3.
 - Legacy notification services that do not expose a `notify` entity remain usable only for migrated entries until a notification entity is selected.
 - The integration compatibility baseline is Home Assistant 2026.11 or newer.
 

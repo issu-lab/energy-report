@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-import voluptuous as vol
+import probatio
 
 from homeassistant.components.repairs import ConfirmRepairFlow, RepairsFlow
 from homeassistant.core import HomeAssistant
@@ -35,7 +35,9 @@ class AnomalyRepairFlow(RepairsFlow):
         )
         if item is None:
             return self.async_abort(reason="anomaly_already_resolved")
-        if user_input is not None:
+        # Home Assistant injects issue_id into the first call. Only a payload
+        # containing decision is an actual form submission.
+        if user_input is not None and "decision" in user_input:
             try:
                 await controller.async_review_anomaly(
                     self._target,
@@ -48,9 +50,9 @@ class AnomalyRepairFlow(RepairsFlow):
         unavailable = "not available"
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required("decision"): selector.SelectSelector(
+                    probatio.Required("decision"): selector.SelectSelector(
                         selector.SelectSelectorConfig(
                             options=["accept_increment", "confirm_exclusion"],
                             translation_key="anomaly_decision",

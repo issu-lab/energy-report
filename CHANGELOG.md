@@ -2,6 +2,11 @@
 
 All notable changes to Energy Report are documented here.
 
+## 1.0.3 - 2026-11-21
+
+- Fixed the native Repairs flow treating Home Assistant's initial `issue_id` payload as a submitted accounting decision.
+- Aligned the Repairs form schema with Home Assistant 2026.11's native `probatio` flow API.
+
 ## 1.0.2 - 2026-11-21
 
 - Added native Home Assistant Repairs for detailed and legacy consumption anomalies.
